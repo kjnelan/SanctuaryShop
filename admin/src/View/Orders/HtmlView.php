@@ -40,6 +40,6 @@ class HtmlView extends BaseHtmlView
     {
         $toolbar = Toolbar::getInstance();
         ToolbarHelper::title('COM_SANCTUARYSHOP_ORDERS', 'list');
-        $toolbar->deleteList('', 'orders.delete');
+        $toolbar->delete('orders.delete')->message('JGLOBAL_CONFIRM_DELETE')->listCheck(true);
     }
 }

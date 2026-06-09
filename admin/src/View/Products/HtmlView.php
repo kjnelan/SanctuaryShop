@@ -41,10 +41,9 @@ class HtmlView extends BaseHtmlView
         $toolbar = Toolbar::getInstance();
         ToolbarHelper::title('COM_SANCTUARYSHOP_PRODUCTS', 'cart');
         $toolbar->addNew('product.add');
-        $toolbar->editList('product.edit');
-        $toolbar->publish('products.publish', 'JTOOLBAR_PUBLISH');
-        $toolbar->unpublish('products.unpublish', 'JTOOLBAR_UNPUBLISH');
-        $toolbar->deleteList('', 'products.delete');
+        $toolbar->publish('products.publish')->listCheck(true);
+        $toolbar->unpublish('products.unpublish')->listCheck(true);
+        $toolbar->delete('products.delete')->message('JGLOBAL_CONFIRM_DELETE')->listCheck(true);
         $toolbar->preferences('com_sanctuaryshop');
     }
 }

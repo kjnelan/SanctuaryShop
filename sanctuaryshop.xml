@@ -36,6 +36,10 @@
         <folder>tmpl</folder>
     </files>
 
+    <languages folder="site/language">
+        <language tag="en-GB">en-GB/com_sanctuaryshop.ini</language>
+    </languages>
+
     <media folder="media" destination="com_sanctuaryshop">
         <folder>css</folder>
         <folder>js</folder>
@@ -55,9 +59,14 @@
             <folder>tmpl</folder>
             <folder>forms</folder>
             <folder>sql</folder>
+            <folder>language</folder>
             <file>access.xml</file>
             <file>config.xml</file>
         </files>
+        <languages folder="admin/language">
+            <language tag="en-GB">en-GB/com_sanctuaryshop.ini</language>
+            <language tag="en-GB">en-GB/com_sanctuaryshop.sys.ini</language>
+        </languages>
     </administration>
 
     <changelogurl>https://example.com/changelog.xml</changelogurl>
