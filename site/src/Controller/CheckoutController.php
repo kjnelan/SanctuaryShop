@@ -4,15 +4,14 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Site\Controller;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 class CheckoutController extends BaseController
 {
     /**
-     * Process the checkout form, create the order, and initiate Square payment.
+     * Create a pending order from cart + billing data, return JSON.
+     * Called via AJAX from the checkout page before card tokenisation.
      */
     public function process(): void
     {
@@ -26,17 +25,20 @@ class CheckoutController extends BaseController
 
         try {
             $orderId = $model->processOrder($data);
-            $app->setUserState('com_sanctuaryshop.checkout.order_id', $orderId);
-            $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=checkout&layout=confirmation&order_id=' . $orderId, false));
-        } catch (\RuntimeException $e) {
-            $app->enqueueMessage($e->getMessage(), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=checkout', false));
+            $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => true, 'order_id' => $orderId]);
+        } catch (\Exception $e) {
+            http_response_code(422);
+            $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
+
+        $app->close();
     }
 
     /**
-     * Handle Square Web Payments SDK callback (AJAX endpoint).
-     * Receives a payment sourceId / nonce from the frontend, charges via Square API.
+     * Charge via Square using the payment sourceId/nonce from the Web Payments SDK.
+     * Returns JSON {success, payment_id} or {success: false, error}.
      */
     public function squarePayment(): void
     {
@@ -50,13 +52,15 @@ class CheckoutController extends BaseController
         $model = $this->getModel('Checkout', 'Site');
 
         try {
-            $result = $model->chargeWithSquare($orderId, $nonce);
+            $paymentId = $model->chargeWithSquare($orderId, $nonce);
             $app->setHeader('Content-Type', 'application/json', true);
-            echo json_encode(['success' => true, 'payment_id' => $result]);
-        } catch (\RuntimeException $e) {
+            echo json_encode(['success' => true, 'payment_id' => $paymentId]);
+        } catch (\Exception $e) {
             http_response_code(422);
+            $app->setHeader('Content-Type', 'application/json', true);
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
+
         $app->close();
     }
 }
