@@ -1,0 +1,14 @@
+# OS / editor artefacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Composer (if added later)
+vendor/
+
+# Built/packaged installer
+*.zip
+pkg_sanctuaryshop*.zip

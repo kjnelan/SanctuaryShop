@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="component" method="upgrade">
+    <name>COM_SANCTUARYSHOP</name>
+    <author>SanctuaryShop</author>
+    <authorEmail>admin@example.com</authorEmail>
+    <authorUrl>https://example.com</authorUrl>
+    <creationDate>2026-06-09</creationDate>
+    <copyright>Copyright (C) 2026 SanctuaryShop. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.0</version>
+    <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
+
+    <namespace path="src">SanctuaryShop\Component\Sanctuaryshop</namespace>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8mb4">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8mb4">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+        </schemas>
+    </update>
+
+    <files folder="site">
+        <folder>services</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+
+    <media folder="media" destination="com_sanctuaryshop">
+        <folder>css</folder>
+        <folder>js</folder>
+        <folder>images</folder>
+    </media>
+
+    <administration>
+        <menu link="option=com_sanctuaryshop">COM_SANCTUARYSHOP</menu>
+        <submenu>
+            <menu link="option=com_sanctuaryshop&amp;view=products">COM_SANCTUARYSHOP_PRODUCTS</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=categories">COM_SANCTUARYSHOP_CATEGORIES</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=orders">COM_SANCTUARYSHOP_ORDERS</menu>
+        </submenu>
+        <files folder="admin">
+            <folder>services</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+            <folder>forms</folder>
+            <folder>sql</folder>
+            <file>access.xml</file>
+            <file>config.xml</file>
+        </files>
+    </administration>
+
+    <changelogurl>https://example.com/changelog.xml</changelogurl>
+    <updateservers>
+        <server type="extension" name="SanctuaryShop Updates">https://example.com/updates.xml</server>
+    </updateservers>
+</extension>

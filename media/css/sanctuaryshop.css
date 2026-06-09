@@ -1,0 +1,24 @@
+/* SanctuaryShop — base styles */
+
+.sanctuaryshop-products .card {
+    transition: box-shadow 0.2s ease;
+}
+.sanctuaryshop-products .card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+.sanctuaryshop-products .card-img-top {
+    height: 220px;
+    object-fit: cover;
+}
+
+/* Checkout card container overrides */
+#card-container iframe {
+    width: 100% !important;
+}
+
+/* Order badge colours */
+.badge-pending    { background-color: #ffc107; color: #000; }
+.badge-processing { background-color: #0d6efd; }
+.badge-completed  { background-color: #198754; }
+.badge-cancelled  { background-color: #6c757d; }
+.badge-refunded   { background-color: #dc3545; }

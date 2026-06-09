@@ -1,0 +1,16 @@
+<?php
+namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\Controller;
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\MVC\Controller\BaseController;
+
+class DisplayController extends BaseController
+{
+    protected $default_view = 'products';
+
+    public function display($cachable = false, $urlparams = []): static
+    {
+        return parent::display($cachable, $urlparams);
+    }
+}
