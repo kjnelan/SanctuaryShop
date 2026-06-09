@@ -13,8 +13,8 @@ class HtmlView extends BaseHtmlView
     protected $items;
     protected $pagination;
     protected $state;
-    protected $filterForm;
-    protected $activeFilters;
+    public $filterForm;
+    public $activeFilters;
     public $listDirn;
     public $listOrder;
 
