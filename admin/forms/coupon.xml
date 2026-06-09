@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="details">
+        <field
+            name="code"
+            type="text"
+            label="COM_SANCTUARYSHOP_COUPON_CODE"
+            required="true"
+            size="40"
+            maxlength="50"
+            filter="string"
+        />
+
+        <field
+            name="type"
+            type="list"
+            label="COM_SANCTUARYSHOP_COUPON_TYPE"
+            required="true"
+            default="percentage"
+        >
+            <option value="percentage">COM_SANCTUARYSHOP_COUPON_TYPE_PERCENTAGE</option>
+            <option value="fixed">COM_SANCTUARYSHOP_COUPON_TYPE_FIXED</option>
+        </field>
+
+        <field
+            name="value"
+            type="number"
+            label="COM_SANCTUARYSHOP_COUPON_VALUE"
+            description="COM_SANCTUARYSHOP_COUPON_VALUE_DESC"
+            required="true"
+            min="0.01"
+            max="999999.99"
+            step="0.01"
+            filter="float"
+        />
+
+        <field
+            name="min_subtotal"
+            type="number"
+            label="COM_SANCTUARYSHOP_COUPON_MIN_SUBTOTAL"
+            description="COM_SANCTUARYSHOP_COUPON_MIN_SUBTOTAL_DESC"
+            default="0.00"
+            min="0"
+            step="0.01"
+            filter="float"
+        />
+
+        <field
+            name="usage_limit"
+            type="number"
+            label="COM_SANCTUARYSHOP_COUPON_USAGE_LIMIT"
+            description="COM_SANCTUARYSHOP_COUPON_USAGE_LIMIT_DESC"
+            default="0"
+            min="0"
+            filter="int"
+        />
+
+        <field
+            name="expires"
+            type="calendar"
+            label="COM_SANCTUARYSHOP_COUPON_EXPIRES"
+            format="%Y-%m-%d %H:%M:%S"
+            filter="user_utc"
+        />
+
+        <field
+            name="published"
+            type="list"
+            label="JSTATUS"
+            default="1"
+        >
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+
+        <field
+            name="id"
+            type="hidden"
+            default="0"
+            filter="int"
+        />
+    </fieldset>
+</form>

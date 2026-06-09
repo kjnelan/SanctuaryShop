@@ -3,6 +3,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Site\View\Product;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 
@@ -21,6 +22,49 @@ class HtmlView extends BaseHtmlView
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
+
+        $doc  = Factory::getDocument();
+        $app  = Factory::getApplication();
+        $menu = $app->getMenu()->getActive();
+
+        // Page title
+        $title  = $this->item->title;
+        if ($menu) {
+            $title .= ' | ' . $menu->getParams()->get('page_title', $menu->title);
+        }
+        $doc->setTitle($title);
+
+        // Meta description
+        $desc = mb_substr(strip_tags($this->item->description ?? ''), 0, 160);
+        if ($desc) {
+            $doc->setDescription($desc);
+        }
+
+        // Canonical URL
+        $canonical = 'index.php?option=com_sanctuaryshop&view=product&id=' . (int) $this->item->id . ':' . $this->item->alias;
+        $doc->addHeadLink(Factory::getUri()->toString(['scheme', 'host']) . \Joomla\CMS\Router\Route::_($canonical), 'canonical');
+
+        // Schema.org JSON-LD
+        $price = (float) ($this->item->sale_price ?: $this->item->price);
+        $schema = [
+            '@context'    => 'https://schema.org',
+            '@type'       => 'Product',
+            'name'        => $this->item->title,
+            'description' => mb_substr(strip_tags($this->item->description ?? ''), 0, 500),
+            'sku'         => $this->item->sku,
+            'offers'      => [
+                '@type'           => 'Offer',
+                'url'             => Factory::getUri()->toString(['scheme', 'host']) . \Joomla\CMS\Router\Route::_($canonical),
+                'price'           => number_format($price, 2, '.', ''),
+                'priceCurrency'   => strtoupper(\Joomla\CMS\Component\ComponentHelper::getParams('com_sanctuaryshop')->get('currency', 'USD')),
+                'availability'    => 'https://schema.org/InStock',
+                'priceValidUntil' => date('Y-12-31', strtotime('+1 year')),
+            ],
+        ];
+        if ($this->item->image) {
+            $schema['image'] = Factory::getUri()->toString(['scheme', 'host']) . '/' . ltrim($this->item->image, '/');
+        }
+        $doc->addScriptDeclaration(json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), 'application/ld+json');
 
         parent::display($tpl);
     }

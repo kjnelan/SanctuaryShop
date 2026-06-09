@@ -17,7 +17,6 @@ class CartController extends BaseController
         $productId = $this->input->getInt('product_id');
         $quantity  = max(1, $this->input->getInt('quantity', 1));
 
-        /** @var \SanctuaryShop\Component\Sanctuaryshop\Site\Model\CartModel $model */
         $model = $this->getModel('Cart', 'Site');
         $model->addItem($productId, $quantity);
 
@@ -29,7 +28,6 @@ class CartController extends BaseController
         Session::checkToken() or jexit('Invalid Token');
 
         $quantities = $this->input->get('quantity', [], 'array');
-        /** @var \SanctuaryShop\Component\Sanctuaryshop\Site\Model\CartModel $model */
         $model = $this->getModel('Cart', 'Site');
         $model->updateQuantities($quantities);
 
@@ -41,9 +39,40 @@ class CartController extends BaseController
         Session::checkToken() or jexit('Invalid Token');
 
         $productId = $this->input->getInt('product_id');
-        /** @var \SanctuaryShop\Component\Sanctuaryshop\Site\Model\CartModel $model */
         $model = $this->getModel('Cart', 'Site');
         $model->removeItem($productId);
+
+        $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=cart', false));
+    }
+
+    public function applyCoupon(): void
+    {
+        Session::checkToken() or jexit('Invalid Token');
+
+        $code = $this->input->getString('coupon_code', '');
+        $model = $this->getModel('Cart', 'Site');
+
+        if (!empty($code)) {
+            $result = $model->applyCoupon($code);
+            if (!$result['success']) {
+                $this->setRedirect(
+                    Route::_('index.php?option=com_sanctuaryshop&view=cart', false),
+                    $result['message'],
+                    'warning'
+                );
+                return;
+            }
+        }
+
+        $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=cart', false));
+    }
+
+    public function removeCoupon(): void
+    {
+        Session::checkToken() or jexit('Invalid Token');
+
+        $model = $this->getModel('Cart', 'Site');
+        $model->removeCoupon();
 
         $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=cart', false));
     }

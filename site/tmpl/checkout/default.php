@@ -162,10 +162,22 @@ foreach ($this->cartItems as $item) {
                             <td><?php echo Text::_('COM_SANCTUARYSHOP_SUBTOTAL'); ?></td>
                             <td class="text-end"><?php echo $sym . number_format($this->subtotal, 2); ?></td>
                         </tr>
+                        <?php if ($this->discount > 0) : ?>
+                        <tr>
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_COUPON_DISCOUNT'); ?></td>
+                            <td class="text-end text-danger">-<?php echo $sym . number_format($this->discount, 2); ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <?php if ($this->taxRate > 0) : ?>
                         <tr>
                             <td><?php echo Text::sprintf('COM_SANCTUARYSHOP_TAX_RATE_PCT', $this->taxRate); ?></td>
                             <td class="text-end"><?php echo $sym . number_format($this->tax, 2); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if ($this->shipping > 0) : ?>
+                        <tr>
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_SHIPPING'); ?></td>
+                            <td class="text-end"><?php echo $sym . number_format($this->shipping, 2); ?></td>
                         </tr>
                         <?php endif; ?>
                         <tr class="fw-bold">

@@ -42,6 +42,7 @@ class Com_SanctuaryshopInstallerScript
                 CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_products` (
                     `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `category_id`      INT NOT NULL DEFAULT 0,
+                    `product_type`     VARCHAR(20) NOT NULL DEFAULT 'physical',
                     `title`            VARCHAR(255) NOT NULL DEFAULT '',
                     `alias`            VARCHAR(400) NOT NULL DEFAULT '',
                     `description`      MEDIUMTEXT NULL,
@@ -72,6 +73,8 @@ class Com_SanctuaryshopInstallerScript
                     `user_id`          INT UNSIGNED NOT NULL DEFAULT 0,
                     `status`           VARCHAR(50) NOT NULL DEFAULT 'pending',
                     `subtotal`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+                    `discount`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+                    `coupon_code`      VARCHAR(50) NULL DEFAULT NULL,
                     `tax`              DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `shipping`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `total`            DECIMAL(10,2) NOT NULL DEFAULT '0.00',
@@ -143,6 +146,23 @@ class Com_SanctuaryshopInstallerScript
                     KEY `idx_product` (`product_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ",
+
+            "{$prefix}sanctuaryshop_coupons" => "
+                CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_coupons` (
+                    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `code`          VARCHAR(50) NOT NULL,
+                    `type`          VARCHAR(20) NOT NULL DEFAULT 'percentage',
+                    `value`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+                    `min_subtotal`  DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+                    `usage_limit`   INT UNSIGNED NOT NULL DEFAULT 0,
+                    `used_count`    INT UNSIGNED NOT NULL DEFAULT 0,
+                    `expires`       DATETIME NULL DEFAULT NULL,
+                    `published`     TINYINT NOT NULL DEFAULT 1,
+                    `created`       DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `idx_code` (`code`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
         ];
 
         foreach ($tables as $name => $sql) {
@@ -164,6 +184,18 @@ class Com_SanctuaryshopInstallerScript
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage(
                 'SanctuaryShop installer (product_type): ' . $e->getMessage(), 'warning'
+            );
+        }
+
+        // v1.2 — add discount/coupon_code columns if they don't exist
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'discount'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `discount` DECIMAL(10,2) NOT NULL DEFAULT '0.00' AFTER `subtotal`, ADD COLUMN `coupon_code` VARCHAR(50) DEFAULT NULL AFTER `discount`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage(
+                'SanctuaryShop installer (discount): ' . $e->getMessage(), 'warning'
             );
         }
     }

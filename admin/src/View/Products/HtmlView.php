@@ -3,6 +3,8 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Products;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
@@ -14,11 +16,23 @@ class HtmlView extends BaseHtmlView
     protected $items;
     protected $pagination;
     protected $state;
+    public $categories = [];
+    public $currencySym = '$';
+
     public function display($tpl = null): void
     {
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
         $this->state      = $this->get('State');
+
+        $model = $this->getModel();
+        if (method_exists($model, 'getCategories')) {
+            $this->categories = $model->getCategories();
+        }
+
+        $currency = strtoupper(ComponentHelper::getParams('com_sanctuaryshop')->get('currency', 'USD'));
+        $map      = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CAD' => 'CA$', 'AUD' => 'A$'];
+        $this->currencySym = $map[$currency] ?? $currency . ' ';
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);

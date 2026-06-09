@@ -12,7 +12,11 @@ $taxRate     = (float) $params->get('tax_rate', 0);
 $currencyMap = ['USD'=>'$','EUR'=>'€','GBP'=>'£','CAD'=>'CA$','AUD'=>'A$'];
 $sym         = $currencyMap[$currency] ?? $currency . ' ';
 $tax         = round($this->subtotal * $taxRate / 100, 2);
-$total       = round($this->subtotal + $tax, 2);
+$flatRate    = (float) $params->get('shipping_flat_rate', 0);
+$freeThresh  = (float) $params->get('shipping_free_threshold', 0);
+$shipping    = ($freeThresh > 0 && $this->subtotal >= $freeThresh) ? 0.00 : $flatRate;
+$afterDisc   = max(0, $this->subtotal - $this->couponDiscount);
+$total       = round($afterDisc + $tax + $shipping, 2);
 ?>
 <div class="com-sanctuaryshop-cart">
     <h1 class="mb-4"><?php echo Text::_('COM_SANCTUARYSHOP_CART'); ?>
@@ -95,6 +99,39 @@ $total       = round($this->subtotal + $tax, 2);
 
         <!-- Order summary sidebar -->
         <div class="col-lg-4">
+            <!-- Coupon -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <?php if ($this->couponCode) : ?>
+                        <p class="mb-2">
+                            <strong><?php echo Text::_('COM_SANCTUARYSHOP_COUPON_CODE'); ?>:</strong>
+                            <span class="text-success"><?php echo $this->escape($this->couponCode); ?></span>
+                        </p>
+                        <form action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.removeCoupon'); ?>"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <?php echo Text::_('COM_SANCTUARYSHOP_COUPON_REMOVE'); ?>
+                            </button>
+                            <?php echo HTMLHelper::_('form.token'); ?>
+                        </form>
+                    <?php else : ?>
+                        <form action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.applyCoupon'); ?>"
+                              method="post" class="row g-2">
+                            <div class="col-8">
+                                <input type="text" name="coupon_code" class="form-control form-control-sm"
+                                       placeholder="<?php echo Text::_('COM_SANCTUARYSHOP_COUPON_CODE'); ?>"
+                                       maxlength="50">
+                            </div>
+                            <div class="col-4">
+                                <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                                    <?php echo Text::_('COM_SANCTUARYSHOP_COUPON_APPLY'); ?>
+                                </button>
+                            </div>
+                            <?php echo HTMLHelper::_('form.token'); ?>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            </div>
             <div class="card sticky-top" style="top:80px">
                 <div class="card-header fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_ORDER_SUMMARY'); ?></div>
                 <div class="card-body">
@@ -103,10 +140,22 @@ $total       = round($this->subtotal + $tax, 2);
                             <td><?php echo Text::_('COM_SANCTUARYSHOP_SUBTOTAL'); ?></td>
                             <td class="text-end"><?php echo $sym . number_format($this->subtotal, 2); ?></td>
                         </tr>
+                        <?php if ($this->couponDiscount > 0) : ?>
+                        <tr>
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_COUPON_DISCOUNT'); ?> (<?php echo $this->escape($this->couponCode); ?>)</td>
+                            <td class="text-end text-danger">-<?php echo $sym . number_format($this->couponDiscount, 2); ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <?php if ($taxRate > 0) : ?>
                         <tr>
                             <td><?php echo Text::sprintf('COM_SANCTUARYSHOP_TAX_RATE_PCT', $taxRate); ?></td>
                             <td class="text-end"><?php echo $sym . number_format($tax, 2); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if ($shipping > 0) : ?>
+                        <tr>
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_SHIPPING'); ?></td>
+                            <td class="text-end"><?php echo $sym . number_format($shipping, 2); ?></td>
                         </tr>
                         <?php endif; ?>
                         <tr class="fw-bold">

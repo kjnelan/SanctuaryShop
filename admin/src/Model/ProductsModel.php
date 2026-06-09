@@ -64,4 +64,26 @@ class ProductsModel extends ListModel
 
         return $query;
     }
+
+    public function getCategories(): array
+    {
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select('a.id, a.title')
+            ->from($db->quoteName('#__categories', 'a'))
+            ->where($db->quoteName('a.extension') . ' = ' . $db->quote('com_sanctuaryshop'))
+            ->where($db->quoteName('a.level') . ' > 0')
+            ->order('a.title ASC');
+        return $db->setQuery($query)->loadObjectList() ?: [];
+    }
+
+    protected function populateState($ordering = 'a.ordering', $direction = 'ASC')
+    {
+        parent::populateState($ordering, $direction);
+        $app = \Joomla\CMS\Factory::getApplication();
+        $category = $app->input->get('filter', [], 'array')['category'] ?? null;
+        if ($category !== null) {
+            $this->setState('filter.category_id', (int) $category);
+        }
+    }
 }

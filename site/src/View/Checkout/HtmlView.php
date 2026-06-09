@@ -11,13 +11,15 @@ class HtmlView extends BaseHtmlView
 {
     protected $cartItems;
     protected $subtotal;
+    protected $discount;
     protected $tax;
+    protected $shipping;
     protected $total;
     protected $taxRate;
+    protected $currency;
     protected $squareAppId;
     protected $squareLocationId;
     protected $squareEnvironment;
-    protected $currency;
     protected $orderId;
     public $orderDownloads = [];
 
@@ -41,8 +43,14 @@ class HtmlView extends BaseHtmlView
             $cartModel       = $this->getModel('Cart');
             $this->cartItems = $cartModel->getItems();
             $this->subtotal  = $cartModel->getSubtotal();
-            $this->tax       = round($this->subtotal * $this->taxRate / 100, 2);
-            $this->total     = round($this->subtotal + $this->tax, 2);
+            $this->discount  = $cartModel->getCouponDiscount($this->subtotal);
+            $afterDiscount   = max(0, $this->subtotal - $this->discount);
+            $this->tax       = round($afterDiscount * $this->taxRate / 100, 2);
+
+            $flatRate          = (float) $params->get('shipping_flat_rate', 0);
+            $freeThreshold     = (float) $params->get('shipping_free_threshold', 0);
+            $this->shipping    = ($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $flatRate;
+            $this->total       = round($afterDiscount + $this->tax + $this->shipping, 2);
 
             $sdkUrl = $this->squareEnvironment === 'production'
                 ? 'https://web.squarecdn.com/v1/square.js'

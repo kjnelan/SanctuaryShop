@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field
+            name="search"
+            type="text"
+            label="COM_SANCTUARYSHOP_SEARCH"
+            hint="JSEARCH_FILTER"
+            class="js-stools-search-string"
+        />
+        <field
+            name="published"
+            type="status"
+            label="JOPTION_SELECT_PUBLISHED"
+            description=""
+            onchange="this.form.submit();"
+        >
+            <option value="">JOPTION_SELECT_PUBLISHED</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <field
+            name="fullordering"
+            type="list"
+            label="JGLOBAL_SORT_BY"
+            default="a.id DESC"
+            onchange="this.form.submit();"
+        >
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.code ASC">COM_SANCTUARYSHOP_COUPON_CODE ascending</option>
+            <option value="a.code DESC">COM_SANCTUARYSHOP_COUPON_CODE descending</option>
+            <option value="a.type ASC">COM_SANCTUARYSHOP_COUPON_TYPE ascending</option>
+            <option value="a.type DESC">COM_SANCTUARYSHOP_COUPON_TYPE descending</option>
+            <option value="a.value ASC">COM_SANCTUARYSHOP_COUPON_VALUE ascending</option>
+            <option value="a.value DESC">COM_SANCTUARYSHOP_COUPON_VALUE descending</option>
+            <option value="a.published ASC">JSTATUS ascending</option>
+            <option value="a.published DESC">JSTATUS descending</option>
+            <option value="a.expires ASC">COM_SANCTUARYSHOP_COUPON_EXPIRES ascending</option>
+            <option value="a.expires DESC">COM_SANCTUARYSHOP_COUPON_EXPIRES descending</option>
+            <option value="a.id ASC">JGRID_HEADING_ID ascending</option>
+            <option value="a.id DESC">JGRID_HEADING_ID descending</option>
+        </field>
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            default="25"
+            onchange="this.form.submit();"
+        />
+    </fields>
+</form>

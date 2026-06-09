@@ -39,6 +39,16 @@ class HtmlView extends BaseHtmlView
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
+        $doc = Factory::getDocument();
+        $menu = $app->getMenu()->getActive();
+        if ($menu) {
+            $pageTitle = $menu->getParams()->get('page_title', $menu->title);
+            if ($this->search) {
+                $pageTitle .= ' — Search: ' . $this->search;
+            }
+            $doc->setTitle($pageTitle);
+        }
+
         parent::display($tpl);
     }
 }

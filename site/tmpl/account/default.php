@@ -36,7 +36,10 @@ use Joomla\CMS\Router\Route;
                 <td><?php echo $order->currency; ?> <?php echo number_format($order->total, 2); ?></td>
                 <td>
                     <?php if ($order->status === 'completed') : ?>
-                        <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=downloads'); ?>" class="btn btn-sm btn-outline-primary"><?php echo Text::_('COM_SANCTUARYSHOP_VIEW_DOWNLOADS'); ?></a>
+                        <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=order&id=' . (int) $order->id); ?>" class="btn btn-sm btn-outline-primary"><?php echo Text::_('COM_SANCTUARYSHOP_VIEW_ORDER'); ?></a>
+                        <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=downloads'); ?>" class="btn btn-sm btn-outline-info"><?php echo Text::_('COM_SANCTUARYSHOP_VIEW_DOWNLOADS'); ?></a>
+                    <?php else : ?>
+                        <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=order&id=' . (int) $order->id); ?>" class="btn btn-sm btn-outline-secondary"><?php echo Text::_('COM_SANCTUARYSHOP_VIEW_ORDER'); ?></a>
                     <?php endif; ?>
                 </td>
             </tr>

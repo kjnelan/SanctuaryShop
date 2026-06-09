@@ -21,9 +21,15 @@ class CheckoutModel extends BaseDatabaseModel
         }
 
         $subtotal = $cartModel->getSubtotal();
+        $discount = $cartModel->getCouponDiscount($subtotal);
+        $afterDiscount = max(0, $subtotal - $discount);
         $taxRate  = (float) $params->get('tax_rate', 0) / 100;
-        $tax      = round($subtotal * $taxRate, 2);
-        $total    = round($subtotal + $tax, 2);
+        $tax      = round($afterDiscount * $taxRate, 2);
+
+        $flatRate      = (float) $params->get('shipping_flat_rate', 0);
+        $freeThreshold = (float) $params->get('shipping_free_threshold', 0);
+        $shipping      = ($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $flatRate;
+        $total         = round($afterDiscount + $tax + $shipping, 2);
 
         $db   = $this->getDatabase();
         $user = Factory::getApplication()->getIdentity();
@@ -35,8 +41,10 @@ class CheckoutModel extends BaseDatabaseModel
             'user_id'          => (int) $user->id,
             'status'           => 'pending',
             'subtotal'         => $subtotal,
+            'discount'         => $discount,
+            'coupon_code'      => $discount > 0 ? $cartModel->getCouponCode() : null,
             'tax'              => $tax,
-            'shipping'         => 0.00,
+            'shipping'         => $shipping,
             'total'            => $total,
             'currency'         => strtoupper($params->get('currency', 'USD')),
             'billing_name'     => $billingName,
@@ -152,6 +160,12 @@ class CheckoutModel extends BaseDatabaseModel
         // Generate download tokens for digital products
         $this->generateDownloadTokens($orderId);
 
+        // Decrement stock for physical products
+        $this->decrementStock($orderId);
+
+        // Decrement coupon usage count
+        $this->decrementCouponUsage($orderId);
+
         $this->sendOrderConfirmation($orderId, $order);
 
         return $paymentId;
@@ -211,32 +225,133 @@ class CheckoutModel extends BaseDatabaseModel
         }
     }
 
+    private function decrementStock(int $orderId): void
+    {
+        try {
+            $db = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select('oi.product_id, oi.quantity')
+                ->from($db->quoteName('#__sanctuaryshop_order_items', 'oi'))
+                ->leftJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = oi.product_id')
+                ->where('oi.order_id = ' . $orderId)
+                ->where("(p.product_type IS NULL OR p.product_type = '' OR p.product_type = 'physical')");
+            $items = $db->setQuery($query)->loadObjectList() ?: [];
+
+            foreach ($items as $item) {
+                $update = $db->getQuery(true)
+                    ->update($db->quoteName('#__sanctuaryshop_products'))
+                    ->set($db->quoteName('stock') . ' = ' . $db->quoteName('stock') . ' - ' . (int) $item->quantity)
+                    ->where($db->quoteName('id') . ' = ' . (int) $item->product_id)
+                    ->where($db->quoteName('stock') . ' >= ' . (int) $item->quantity);
+                $db->setQuery($update)->execute();
+            }
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+    }
+
+    private function decrementCouponUsage(int $orderId): void
+    {
+        try {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select('coupon_code')
+                ->from($db->quoteName('#__sanctuaryshop_orders'))
+                ->where($db->quoteName('id') . ' = ' . (int) $orderId);
+            $couponCode = $db->setQuery($query)->loadResult();
+
+            if (!empty($couponCode)) {
+                $update = $db->getQuery(true)
+                    ->update($db->quoteName('#__sanctuaryshop_coupons'))
+                    ->set($db->quoteName('used_count') . ' = ' . $db->quoteName('used_count') . ' + 1')
+                    ->where($db->quoteName('code') . ' = ' . $db->quote($couponCode));
+                $db->setQuery($update)->execute();
+            }
+        } catch (\Exception $e) {
+            // Non-fatal
+        }
+    }
+
     private function sendOrderConfirmation(int $orderId, object $order): void
     {
         try {
             $params   = ComponentHelper::getParams('com_sanctuaryshop');
             $notifyTo = $params->get('notify_email', '');
+            $shopName = $params->get('shop_name', 'SanctuaryShop');
             $config   = Factory::getApplication()->get('config');
+            $db       = $this->getDatabase();
 
-            $mailer = Factory::getMailer();
-            $mailer->setSender([$config->get('mailfrom'), $config->get('fromname')]);
-            $mailer->setSubject('New Order #' . str_pad($orderId, 5, '0', STR_PAD_LEFT) . ' — SanctuaryShop');
-            $mailer->setBody(
-                'A new order has been placed.' . "\n\n" .
-                'Order: #' . str_pad($orderId, 5, '0', STR_PAD_LEFT) . "\n" .
-                'Customer: ' . $order->billing_name . ' <' . $order->billing_email . ">\n" .
-                'Total: ' . $order->currency . ' $' . number_format($order->total, 2) . "\n"
-            );
+            // Load order items
+            $query = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__sanctuaryshop_order_items'))
+                ->where($db->quoteName('order_id') . ' = ' . (int) $orderId);
+            $items = $db->setQuery($query)->loadObjectList() ?: [];
 
+            // Load download tokens
+            $dlQuery = $db->getQuery(true)
+                ->select([
+                    't.token', 't.download_count', 't.max_downloads', 't.expires', 't.revoked',
+                    'p.title AS product_title',
+                    'pf.label AS file_label', 'pf.filename', 'pf.filesize',
+                ])
+                ->from($db->quoteName('#__sanctuaryshop_download_tokens', 't'))
+                ->leftJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = t.product_id')
+                ->leftJoin($db->quoteName('#__sanctuaryshop_product_files', 'pf') . ' ON pf.id = t.file_id')
+                ->where('t.order_id = ' . (int) $orderId)
+                ->where('t.revoked = 0');
+            $downloads = $db->setQuery($dlQuery)->loadObjectList() ?: [];
+
+            // Currency symbol
+            $currencyMap = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CAD' => 'CA$', 'AUD' => 'A$'];
+            $currencySym = $currencyMap[$order->currency] ?? $order->currency . ' ';
+
+            // Render HTML email body
+            $emailData = compact('orderId', 'order', 'items', 'downloads', 'currencySym', 'shopName');
+            $htmlBody  = $this->renderEmailTemplate('order_confirmation', $emailData);
+
+            // Plain text fallback
+            $textBody  = 'Order #' . str_pad($orderId, 5, '0', STR_PAD_LEFT) . "\n\n";
+            $textBody .= 'Customer: ' . $order->billing_name . ' <' . $order->billing_email . ">\n";
+            $textBody .= 'Total: ' . $order->currency . ' ' . number_format($order->total, 2) . "\n\n";
+            $textBody .= "Items:\n";
+            foreach ($items as $item) {
+                $textBody .= '  ' . $item->title . ' × ' . (int) $item->quantity . ' — ' . $currencySym . number_format($item->total_price, 2) . "\n";
+            }
+            $textBody .= "\nThank you for your order!";
+
+            $subject = 'Order Confirmation #' . str_pad($orderId, 5, '0', STR_PAD_LEFT) . ' — ' . $shopName;
+
+            // Build recipients (admin + customer)
+            $recipients = [];
             if (!empty($notifyTo) && MailHelper::isEmailAddress($notifyTo)) {
-                $mailer->addRecipient($notifyTo);
+                $recipients[] = $notifyTo;
             }
             if (MailHelper::isEmailAddress($order->billing_email)) {
-                $mailer->addRecipient($order->billing_email);
+                $recipients[] = $order->billing_email;
+            }
+            $recipients = array_unique($recipients);
+
+            $mailer = Factory::getMailer();
+            $mailer->setSender([$config->get('mailfrom'), $shopName]);
+            $mailer->setSubject($subject);
+            $mailer->isHtml(true);
+            $mailer->setBody($htmlBody);
+            $mailer->addRecipient(array_shift($recipients));
+            foreach ($recipients as $r) {
+                $mailer->addBcc($r);
             }
             $mailer->Send();
         } catch (\Exception $e) {
             // Non-fatal
         }
+    }
+
+    private function renderEmailTemplate(string $template, array $data): string
+    {
+        extract($data, EXTR_OVERWRITE);
+        ob_start();
+        include JPATH_SITE . '/components/com_sanctuaryshop/tmpl/email/' . $template . '.php';
+        return ob_get_clean();
     }
 }

@@ -15,6 +15,16 @@ use Joomla\CMS\Language\Text;
                 <a class="btn btn-secondary" href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=products'); ?>"><?php echo Text::_('JSEARCH_FILTER_CLEAR'); ?></a>
             </div>
         </div>
+        <div class="col-md-3">
+            <select name="filter[category]" class="form-select" onchange="this.form.submit()">
+                <option value=""><?php echo Text::_('COM_SANCTUARYSHOP_SELECT_CATEGORY'); ?></option>
+                <?php foreach ($this->categories as $cat) : ?>
+                <option value="<?php echo (int) $cat->id; ?>" <?php echo $this->state->get('filter.category') == $cat->id ? 'selected' : ''; ?>>
+                    <?php echo $this->escape($cat->title); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     </div>
 
     <table class="table table-striped" id="productList">
@@ -50,9 +60,9 @@ use Joomla\CMS\Language\Text;
                 </td>
                 <td><?php echo $this->escape($item->category_title ?? '—'); ?></td>
                 <td>
-                    $<?php echo number_format($item->price, 2); ?>
+                    <?php echo $this->currencySym; ?><?php echo number_format($item->price, 2); ?>
                     <?php if ($item->sale_price) : ?>
-                        <span class="badge bg-danger ms-1">Sale: $<?php echo number_format($item->sale_price, 2); ?></span>
+                        <span class="badge bg-danger ms-1">Sale: <?php echo $this->currencySym . number_format($item->sale_price, 2); ?></span>
                     <?php endif; ?>
                 </td>
                 <td><?php echo (int) $item->stock; ?></td>
@@ -61,7 +71,7 @@ use Joomla\CMS\Language\Text;
             </tr>
         <?php endforeach; ?>
         <?php if (empty($this->items)) : ?>
-            <tr><td colspan="8" class="text-center text-muted py-4">No products found. <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=product.add'); ?>">Add your first product</a>.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4"><?php echo Text::_('COM_SANCTUARYSHOP_NO_PRODUCTS_FOUND'); ?> <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=product.add'); ?>"><?php echo Text::_('COM_SANCTUARYSHOP_ADD_FIRST_PRODUCT'); ?></a>.</td></tr>
         <?php endif; ?>
         </tbody>
     </table>
