@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="search" label="JSEARCH_FILTER_LABEL" hint="JSEARCH_FILTER" class="form-control" />
+        <field name="state" type="status" label="JSTATUS" onchange="this.form.submit();" class="form-select">
+            <option value="">JOPTION_SELECT_PUBLISHED</option>
+        </field>
+        <field name="category_id" type="category" label="JCATEGORY" extension="com_sanctuaryshop" onchange="this.form.submit();" class="form-select">
+            <option value="">JOPTION_SELECT_CATEGORY</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <field name="fullordering" type="list" label="JGLOBAL_SORT_BY" class="form-select">
+            <option value="a.ordering ASC">JGLOBAL_SORT_BY</option>
+            <option value="a.title ASC">JGLOBAL_TITLE_ASC</option>
+            <option value="a.title DESC">JGLOBAL_TITLE_DESC</option>
+            <option value="a.price ASC">COM_SANCTUARYSHOP_FIELD_PRICE_ASC</option>
+            <option value="a.price DESC">COM_SANCTUARYSHOP_FIELD_PRICE_DESC</option>
+            <option value="a.state ASC">JSTATUS_ASC</option>
+            <option value="a.id DESC">JGRID_HEADING_ID_DESC</option>
+        </field>
+        <field name="limit" type="limitbox" label="JGLOBAL_LIST_LIMIT" class="form-select" />
+    </fields>
+</form>

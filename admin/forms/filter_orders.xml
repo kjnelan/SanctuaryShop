@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="search" label="JSEARCH_FILTER_LABEL" hint="JSEARCH_FILTER" class="form-control" />
+        <field name="status" type="list" label="JSTATUS" onchange="this.form.submit();" class="form-select">
+            <option value="">JOPTION_SELECT_PUBLISHED</option>
+            <option value="pending">COM_SANCTUARYSHOP_ORDER_STATUS_PENDING</option>
+            <option value="processing">COM_SANCTUARYSHOP_ORDER_STATUS_PROCESSING</option>
+            <option value="completed">COM_SANCTUARYSHOP_ORDER_STATUS_COMPLETED</option>
+            <option value="cancelled">COM_SANCTUARYSHOP_ORDER_STATUS_CANCELLED</option>
+            <option value="refunded">COM_SANCTUARYSHOP_ORDER_STATUS_REFUNDED</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <field name="fullordering" type="list" label="JGLOBAL_SORT_BY" class="form-select">
+            <option value="a.created DESC">COM_SANCTUARYSHOP_ORDER_NEWEST</option>
+            <option value="a.created ASC">COM_SANCTUARYSHOP_ORDER_OLDEST</option>
+            <option value="a.total DESC">COM_SANCTUARYSHOP_ORDER_TOTAL_HIGH</option>
+            <option value="a.total ASC">COM_SANCTUARYSHOP_ORDER_TOTAL_LOW</option>
+            <option value="a.id DESC">JGRID_HEADING_ID_DESC</option>
+        </field>
+        <field name="limit" type="limitbox" label="JGLOBAL_LIST_LIMIT" class="form-select" />
+    </fields>
+</form>

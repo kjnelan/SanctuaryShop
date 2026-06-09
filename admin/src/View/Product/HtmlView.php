@@ -3,9 +3,9 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Product;
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
 class HtmlView extends BaseHtmlView
@@ -30,14 +30,15 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
-        $isNew = ($this->item->id == 0);
+        $isNew   = ($this->item->id == 0);
+        $toolbar = Toolbar::getInstance();
         ToolbarHelper::title($isNew ? 'COM_SANCTUARYSHOP_PRODUCT_NEW' : 'COM_SANCTUARYSHOP_PRODUCT_EDIT', 'box-add');
-        ToolbarHelper::apply('product.apply');
-        ToolbarHelper::save('product.save');
-        ToolbarHelper::save2new('product.save2new');
+        $toolbar->apply('product.apply');
+        $toolbar->save('product.save');
+        $toolbar->save2new('product.save2new');
         if (!$isNew) {
-            ToolbarHelper::save2copy('product.save2copy');
+            $toolbar->save2copy('product.save2copy');
         }
-        ToolbarHelper::cancel($isNew ? 'product.cancel' : 'product.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
+        $toolbar->cancel($isNew ? 'product.cancel' : 'product.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
     }
 }

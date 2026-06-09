@@ -13,12 +13,20 @@ class HtmlView extends BaseHtmlView
     protected $items;
     protected $pagination;
     protected $state;
+    protected $filterForm;
+    protected $activeFilters;
+    public $listDirn;
+    public $listOrder;
 
     public function display($tpl = null): void
     {
-        $this->items      = $this->get('Items');
-        $this->pagination = $this->get('Pagination');
-        $this->state      = $this->get('State');
+        $this->items         = $this->get('Items');
+        $this->pagination    = $this->get('Pagination');
+        $this->state         = $this->get('State');
+        $this->filterForm    = $this->get('FilterForm');
+        $this->activeFilters = $this->get('ActiveFilters');
+        $this->listDirn      = $this->escape($this->state->get('list.direction'));
+        $this->listOrder     = $this->escape($this->state->get('list.ordering'));
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
@@ -30,12 +38,13 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
+        $toolbar = Toolbar::getInstance();
         ToolbarHelper::title('COM_SANCTUARYSHOP_PRODUCTS', 'cart');
-        ToolbarHelper::addNew('product.add');
-        ToolbarHelper::editList('product.edit');
-        ToolbarHelper::publish('products.publish');
-        ToolbarHelper::unpublish('products.unpublish');
-        ToolbarHelper::deleteList('', 'products.delete');
-        ToolbarHelper::preferences('com_sanctuaryshop');
+        $toolbar->addNew('product.add');
+        $toolbar->editList('product.edit');
+        $toolbar->publish('products.publish', 'JTOOLBAR_PUBLISH');
+        $toolbar->unpublish('products.unpublish', 'JTOOLBAR_UNPUBLISH');
+        $toolbar->deleteList('', 'products.delete');
+        $toolbar->preferences('com_sanctuaryshop');
     }
 }
