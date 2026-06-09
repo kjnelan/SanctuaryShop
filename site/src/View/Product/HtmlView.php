@@ -64,7 +64,7 @@ class HtmlView extends BaseHtmlView
         if ($this->item->image) {
             $schema['image'] = Factory::getUri()->toString(['scheme', 'host']) . '/' . ltrim($this->item->image, '/');
         }
-        $doc->addScriptDeclaration(json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), 'application/ld+json');
+        $doc->addCustomTag('<script type="application/ld+json">' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>');
 
         parent::display($tpl);
     }

@@ -3,11 +3,10 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Coupons;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Helper\ContentHelper;
-use Joomla\CMS\Language\Text;
-use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Toolbar\Toolbar;
+use Joomla\CMS\Toolbar\ToolbarHelper;
 
 class HtmlView extends BaseHtmlView
 {
@@ -15,23 +14,27 @@ class HtmlView extends BaseHtmlView
     protected $pagination;
     protected $state;
 
-    public function display($tpl = null)
+    public function display($tpl = null): void
     {
         $this->items      = $this->get('Items');
         $this->pagination = $this->get('Pagination');
         $this->state      = $this->get('State');
 
-        $this->addToolbar();
+        if (count($errors = $this->get('Errors'))) {
+            throw new GenericDataException(implode("\n", $errors), 500);
+        }
 
-        return parent::display($tpl);
+        $this->addToolbar();
+        parent::display($tpl);
     }
 
-    protected function addToolbar()
+    protected function addToolbar(): void
     {
-        ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_COUPONS'), 'tags');
-        ToolbarHelper::addNew('coupon.add');
-        ToolbarHelper::publish('coupons.publish', 'JTOOLBAR_PUBLISH', true);
-        ToolbarHelper::unpublish('coupons.unpublish', 'JTOOLBAR_UNPUBLISH', true);
-        ToolbarHelper::deleteList('', 'coupons.delete', 'JTOOLBAR_DELETE');
+        $toolbar = Toolbar::getInstance();
+        ToolbarHelper::title('COM_SANCTUARYSHOP_COUPONS', 'tags');
+        $toolbar->addNew('coupon.add');
+        $toolbar->publish('coupons.publish')->listCheck(true);
+        $toolbar->unpublish('coupons.unpublish')->listCheck(true);
+        $toolbar->delete('coupons.delete')->message('JGLOBAL_CONFIRM_DELETE')->listCheck(true);
     }
 }

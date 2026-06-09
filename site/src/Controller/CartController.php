@@ -4,6 +4,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Site\Controller;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -57,7 +58,7 @@ class CartController extends BaseController
             if (!$result['success']) {
                 $this->setRedirect(
                     Route::_('index.php?option=com_sanctuaryshop&view=cart', false),
-                    $result['message'],
+                    Text::_($result['message']),
                     'warning'
                 );
                 return;

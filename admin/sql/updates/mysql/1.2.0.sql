@@ -1,8 +1,5 @@
--- v1.2.0: coupons, discount columns on orders
-
-ALTER TABLE `#__sanctuaryshop_orders`
-    ADD COLUMN IF NOT EXISTS `discount`    DECIMAL(10,2) NOT NULL DEFAULT '0.00' AFTER `subtotal`,
-    ADD COLUMN IF NOT EXISTS `coupon_code` VARCHAR(50) DEFAULT NULL AFTER `discount`;
+-- v1.2.0: coupons, discount/coupon_code columns on orders
+-- Note: discount + coupon_code columns are added via script.php (uses SHOW COLUMNS guard for compatibility)
 
 CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_coupons` (
     `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -29,6 +29,11 @@ class CouponsModel extends ListModel
             $query->where($db->quoteName('a.code') . ' LIKE ' . $search);
         }
 
+        $type = $this->getState('filter.type');
+        if (!empty($type)) {
+            $query->where($db->quoteName('a.type') . ' = ' . $db->quote($type));
+        }
+
         $published = $this->getState('filter.published');
         if (is_numeric($published)) {
             $query->where($db->quoteName('a.published') . ' = ' . (int) $published);

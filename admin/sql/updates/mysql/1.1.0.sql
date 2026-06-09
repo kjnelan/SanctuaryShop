@@ -1,7 +1,5 @@
 -- v1.1.0: product types, downloadable files, download tokens
-
-ALTER TABLE `#__sanctuaryshop_products`
-    ADD COLUMN IF NOT EXISTS `product_type` VARCHAR(20) NOT NULL DEFAULT 'physical' AFTER `category_id`;
+-- Note: product_type column is added via script.php (uses SHOW COLUMNS guard for compatibility)
 
 CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_product_files` (
     `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
