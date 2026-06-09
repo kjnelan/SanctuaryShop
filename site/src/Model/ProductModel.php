@@ -3,6 +3,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Site\Model;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ItemModel;
 
 class ProductModel extends ItemModel
@@ -13,8 +14,13 @@ class ProductModel extends ItemModel
 
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['a.id', 'a.title', 'a.alias', 'a.description', 'a.price', 'a.sale_price', 'a.sku', 'a.stock', 'a.image', 'a.category_id', 'a.params']))
+            ->select([
+                'a.id', 'a.title', 'a.alias', 'a.description', 'a.price', 'a.sale_price',
+                'a.sku', 'a.stock', 'a.image', 'a.category_id', 'a.product_type', 'a.params',
+                'c.title AS category_title',
+            ])
             ->from($db->quoteName('#__sanctuaryshop_products', 'a'))
+            ->leftJoin($db->quoteName('#__categories', 'c') . ' ON c.id = a.category_id')
             ->where($db->quoteName('a.id') . ' = ' . $pk)
             ->where($db->quoteName('a.state') . ' = 1');
 
@@ -23,7 +29,7 @@ class ProductModel extends ItemModel
 
     protected function populateState(): void
     {
-        $app = \Joomla\CMS\Factory::getApplication();
+        $app = Factory::getApplication();
         $this->setState('product.id', $app->input->getInt('id'));
     }
 }

@@ -22,6 +22,7 @@ use Joomla\CMS\Language\Text;
             <tr>
                 <th class="w-1 text-center"><?php echo HTMLHelper::_('grid.checkall'); ?></th>
                 <th><?php echo Text::_('JGLOBAL_TITLE'); ?></th>
+                <th><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_PRODUCT_TYPE'); ?></th>
                 <th><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_CATEGORY'); ?></th>
                 <th><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_PRICE'); ?></th>
                 <th><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_STOCK'); ?></th>
@@ -39,6 +40,14 @@ use Joomla\CMS\Language\Text;
                     </a>
                     <?php if ($item->sku) : ?><div class="small text-muted">SKU: <?php echo $this->escape($item->sku); ?></div><?php endif; ?>
                 </td>
+                <td>
+                    <?php
+                    $typeBadge = ['physical'=>'secondary','digital'=>'info','subscription'=>'primary','service'=>'success'];
+                    $typeBadgeClass = $typeBadge[$item->product_type ?? 'physical'] ?? 'secondary';
+                    $typeKey = 'COM_SANCTUARYSHOP_PRODUCT_TYPE_' . strtoupper($item->product_type ?? 'PHYSICAL');
+                    ?>
+                    <span class="badge bg-<?php echo $typeBadgeClass; ?>"><?php echo Text::_($typeKey); ?></span>
+                </td>
                 <td><?php echo $this->escape($item->category_title ?? '—'); ?></td>
                 <td>
                     $<?php echo number_format($item->price, 2); ?>
@@ -52,7 +61,7 @@ use Joomla\CMS\Language\Text;
             </tr>
         <?php endforeach; ?>
         <?php if (empty($this->items)) : ?>
-            <tr><td colspan="7" class="text-center text-muted py-4">No products found. <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=product.add'); ?>">Add your first product</a>.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">No products found. <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=product.add'); ?>">Add your first product</a>.</td></tr>
         <?php endif; ?>
         </tbody>
     </table>

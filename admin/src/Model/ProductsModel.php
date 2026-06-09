@@ -28,7 +28,7 @@ class ProductsModel extends ListModel
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
-        $query->select($db->quoteName(['a.id', 'a.title', 'a.alias', 'a.price', 'a.sale_price', 'a.sku', 'a.stock', 'a.state', 'a.ordering', 'a.created', 'a.category_id']))
+        $query->select($db->quoteName(['a.id', 'a.title', 'a.alias', 'a.price', 'a.sale_price', 'a.sku', 'a.stock', 'a.state', 'a.ordering', 'a.created', 'a.category_id', 'a.product_type']))
               ->from($db->quoteName('#__sanctuaryshop_products', 'a'));
 
         // Join category title

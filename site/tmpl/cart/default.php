@@ -1,69 +1,135 @@
-<?php defined('_JEXEC') or die;
+<?php
+defined('_JEXEC') or die;
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+
+$params      = ComponentHelper::getParams('com_sanctuaryshop');
+$currency    = strtoupper($params->get('currency', 'USD'));
+$taxRate     = (float) $params->get('tax_rate', 0);
+$currencyMap = ['USD'=>'$','EUR'=>'€','GBP'=>'£','CAD'=>'CA$','AUD'=>'A$'];
+$sym         = $currencyMap[$currency] ?? $currency . ' ';
+$tax         = round($this->subtotal * $taxRate / 100, 2);
+$total       = round($this->subtotal + $tax, 2);
 ?>
-<div class="sanctuaryshop-cart">
-    <h1>Shopping Cart</h1>
+<div class="com-sanctuaryshop-cart">
+    <h1 class="mb-4"><?php echo Text::_('COM_SANCTUARYSHOP_CART'); ?>
+        <?php if (!empty($this->cartItems)) : ?>
+            <span class="badge bg-secondary fs-6"><?php echo array_sum(array_column($this->cartItems, 'quantity')); ?></span>
+        <?php endif; ?>
+    </h1>
 
     <?php if (empty($this->cartItems)) : ?>
         <div class="alert alert-info">
-            Your cart is empty. <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=products'); ?>">Continue shopping</a>
+            <?php echo Text::_('COM_SANCTUARYSHOP_CART_EMPTY'); ?>
+            <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=products'); ?>" class="alert-link">
+                <?php echo Text::_('COM_SANCTUARYSHOP_CONTINUE_SHOPPING'); ?>
+            </a>
         </div>
     <?php else : ?>
-        <form action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.update'); ?>" method="post" id="cartForm">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th class="text-end">Unit Price</th>
-                        <th class="text-center" style="width:110px">Qty</th>
-                        <th class="text-end">Total</th>
-                        <th class="text-end">Remove</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($this->cartItems as $item) : ?>
-                    <tr>
-                        <td>
-                            <?php echo $this->escape($item->title); ?>
-                            <?php if ($item->sku) : ?><br><span class="small text-muted"><?php echo $this->escape($item->sku); ?></span><?php endif; ?>
-                        </td>
-                        <td class="text-end">$<?php echo number_format($item->unit_price, 2); ?></td>
-                        <td class="text-center">
-                            <input type="number" name="quantity[<?php echo (int) $item->product_id; ?>]"
-                                   value="<?php echo (int) $item->quantity; ?>" min="0" max="999"
-                                   class="form-control form-control-sm text-center">
-                        </td>
-                        <td class="text-end">$<?php echo number_format($item->total_price, 2); ?></td>
-                        <td class="text-end">
-                            <button type="submit" name="remove_item" value="<?php echo (int) $item->product_id; ?>"
-                                    class="btn btn-sm btn-outline-danger" title="Remove"
-                                    onclick="document.getElementById('remove_product_id').value=this.value; document.getElementById('cartForm').action='<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.remove'); ?>';">
-                                &times;
-                            </button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                    <tr class="fw-bold">
-                        <td colspan="3" class="text-end">Subtotal</td>
-                        <td class="text-end">$<?php echo number_format($this->subtotal, 2); ?></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
 
-            <input type="hidden" id="remove_product_id" name="product_id" value="0">
-            <?php echo HTMLHelper::_('form.token'); ?>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <form action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.update'); ?>"
+                  method="post" id="cartForm">
 
-            <div class="d-flex justify-content-between mt-3">
-                <button type="submit" class="btn btn-outline-secondary">Update Cart</button>
-                <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=checkout'); ?>" class="btn btn-primary btn-lg">
-                    Checkout &rarr;
-                </a>
+                <div class="card">
+                    <div class="card-body p-0">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3"><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_PRODUCT'); ?></th>
+                                <th class="text-end"><?php echo Text::_('COM_SANCTUARYSHOP_UNIT_PRICE'); ?></th>
+                                <th class="text-center" style="width:110px"><?php echo Text::_('COM_SANCTUARYSHOP_QUANTITY'); ?></th>
+                                <th class="text-end"><?php echo Text::_('COM_SANCTUARYSHOP_LINE_TOTAL'); ?></th>
+                                <th class="text-end pe-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($this->cartItems as $item) : ?>
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-semibold"><?php echo $this->escape($item->title); ?></div>
+                                    <?php if ($item->sku) : ?>
+                                        <div class="small text-muted">SKU: <?php echo $this->escape($item->sku); ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-end"><?php echo $sym . number_format($item->unit_price, 2); ?></td>
+                                <td class="text-center">
+                                    <input type="number"
+                                           name="quantity[<?php echo (int) $item->product_id; ?>]"
+                                           value="<?php echo (int) $item->quantity; ?>"
+                                           min="0" max="999"
+                                           class="form-control form-control-sm text-center">
+                                </td>
+                                <td class="text-end fw-semibold"><?php echo $sym . number_format($item->total_price, 2); ?></td>
+                                <td class="text-end pe-3">
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            title="<?php echo Text::_('COM_SANCTUARYSHOP_REMOVE'); ?>"
+                                            onclick="removeItem(<?php echo (int) $item->product_id; ?>)">
+                                        &times;
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=products'); ?>" class="btn btn-outline-secondary">
+                        &larr; <?php echo Text::_('COM_SANCTUARYSHOP_CONTINUE_SHOPPING'); ?>
+                    </a>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <?php echo Text::_('COM_SANCTUARYSHOP_UPDATE_CART'); ?>
+                    </button>
+                </div>
+
+                <input type="hidden" id="remove_product_id" name="product_id" value="0">
+                <?php echo HTMLHelper::_('form.token'); ?>
+            </form>
+        </div>
+
+        <!-- Order summary sidebar -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top:80px">
+                <div class="card-header fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_ORDER_SUMMARY'); ?></div>
+                <div class="card-body">
+                    <table class="table table-sm mb-3">
+                        <tr>
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_SUBTOTAL'); ?></td>
+                            <td class="text-end"><?php echo $sym . number_format($this->subtotal, 2); ?></td>
+                        </tr>
+                        <?php if ($taxRate > 0) : ?>
+                        <tr>
+                            <td><?php echo Text::sprintf('COM_SANCTUARYSHOP_TAX_RATE_PCT', $taxRate); ?></td>
+                            <td class="text-end"><?php echo $sym . number_format($tax, 2); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                        <tr class="fw-bold">
+                            <td><?php echo Text::_('COM_SANCTUARYSHOP_TOTAL'); ?></td>
+                            <td class="text-end"><?php echo $sym . number_format($total, 2); ?></td>
+                        </tr>
+                    </table>
+                    <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=checkout'); ?>" class="btn btn-success btn-lg w-100">
+                        <?php echo Text::_('COM_SANCTUARYSHOP_PROCEED_CHECKOUT'); ?> &rarr;
+                    </a>
+                </div>
             </div>
-        </form>
+        </div>
+    </div>
+
     <?php endif; ?>
 </div>
+
+<script>
+function removeItem(productId) {
+    var form = document.getElementById('cartForm');
+    document.getElementById('remove_product_id').value = productId;
+    form.action = '<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.remove'); ?>';
+    form.submit();
+}
+</script>
