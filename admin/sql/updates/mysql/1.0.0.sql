@@ -1,0 +1,1 @@
+-- 1.0.0 initial schema (applied via install.mysql.utf8.sql)
