@@ -9,7 +9,7 @@
     <license>GNU General Public License version 2 or later</license>
     <version>1.0.0</version>
     <schemaversion>1.0.0</schemaversion>
-    <scriptfile>admin/script.php</scriptfile>
+    <scriptfile>script.php</scriptfile>
     <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
 
     <namespace path="src">SanctuaryShop\Component\Sanctuaryshop</namespace>
@@ -57,7 +57,6 @@
             <folder>sql</folder>
             <file>access.xml</file>
             <file>config.xml</file>
-            <file>script.php</file>
         </files>
     </administration>
 
