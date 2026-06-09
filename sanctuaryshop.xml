@@ -8,6 +8,7 @@
     <copyright>Copyright (C) 2026 SanctuaryShop. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <version>1.0.0</version>
+    <schemaversion>1.0.0</schemaversion>
     <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
 
     <namespace path="src">SanctuaryShop\Component\Sanctuaryshop</namespace>
