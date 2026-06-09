@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extension type="component" method="upgrade">
-    <name>COM_SANCTUARYSHOP</name>
-    <author>SanctuaryShop</author>
-    <authorEmail>admin@example.com</authorEmail>
-    <authorUrl>https://example.com</authorUrl>
+    <name>SanctuaryShop</name>
+    <author>Kenneth J Nelan</author>
+    <authorEmail>ken.nelan@sacwan.net</authorEmail>
+    <authorUrl>https://sacwan.net</authorUrl>
     <creationDate>2026-06-09</creationDate>
-    <copyright>Copyright (C) 2026 SanctuaryShop. All rights reserved.</copyright>
+    <copyright>Copyright (C) 2026 Sacred Wandering, Inc. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <version>1.0.0</version>
     <schemaversion>1.0.0</schemaversion>
@@ -49,9 +49,9 @@
     <administration>
         <menu link="option=com_sanctuaryshop">COM_SANCTUARYSHOP</menu>
         <submenu>
-            <menu link="option=com_sanctuaryshop&amp;view=products">COM_SANCTUARYSHOP_PRODUCTS</menu>
-            <menu link="option=com_categories&amp;extension=com_sanctuaryshop&amp;view=categories">COM_SANCTUARYSHOP_CATEGORIES</menu>
-            <menu link="option=com_sanctuaryshop&amp;view=orders">COM_SANCTUARYSHOP_ORDERS</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=products">SanctuaryShopProducts</menu>
+            <menu link="option=com_categories&amp;extension=com_sanctuaryshop&amp;view=categories">SanctuaryShopCategories</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=orders">SanctuaryShopOrders</menu>
         </submenu>
         <files folder="admin">
             <folder>services</folder>
