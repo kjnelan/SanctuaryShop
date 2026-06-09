@@ -13,20 +13,12 @@ class HtmlView extends BaseHtmlView
     protected $items;
     protected $pagination;
     protected $state;
-    public $filterForm;
-    public $activeFilters;
-    public $listDirn;
-    public $listOrder;
 
     public function display($tpl = null): void
     {
-        $this->items         = $this->get('Items');
-        $this->pagination    = $this->get('Pagination');
-        $this->state         = $this->get('State');
-        $this->filterForm    = $this->get('FilterForm');
-        $this->activeFilters = $this->get('ActiveFilters');
-        $this->listDirn      = $this->escape($this->state->get('list.direction'));
-        $this->listOrder     = $this->escape($this->state->get('list.ordering'));
+        $this->items      = $this->get('Items');
+        $this->pagination = $this->get('Pagination');
+        $this->state      = $this->get('State');
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);

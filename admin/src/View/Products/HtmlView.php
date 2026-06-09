@@ -5,6 +5,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
@@ -13,20 +14,11 @@ class HtmlView extends BaseHtmlView
     protected $items;
     protected $pagination;
     protected $state;
-    public $filterForm;
-    public $activeFilters;
-    public $listDirn;
-    public $listOrder;
-
     public function display($tpl = null): void
     {
-        $this->items         = $this->get('Items');
-        $this->pagination    = $this->get('Pagination');
-        $this->state         = $this->get('State');
-        $this->filterForm    = $this->get('FilterForm');
-        $this->activeFilters = $this->get('ActiveFilters');
-        $this->listDirn      = $this->escape($this->state->get('list.direction'));
-        $this->listOrder     = $this->escape($this->state->get('list.ordering'));
+        $this->items      = $this->get('Items');
+        $this->pagination = $this->get('Pagination');
+        $this->state      = $this->get('State');
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
@@ -44,6 +36,7 @@ class HtmlView extends BaseHtmlView
         $toolbar->publish('products.publish')->listCheck(true);
         $toolbar->unpublish('products.unpublish')->listCheck(true);
         $toolbar->delete('products.delete')->message('JGLOBAL_CONFIRM_DELETE')->listCheck(true);
-        $toolbar->preferences('com_sanctuaryshop');
+        $toolbar->link('JTOOLBAR_OPTIONS', 'index.php?option=com_config&view=component&component=com_sanctuaryshop')
+                ->icon('icon-cog');
     }
 }
