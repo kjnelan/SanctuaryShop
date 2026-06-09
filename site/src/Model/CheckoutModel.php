@@ -149,9 +149,66 @@ class CheckoutModel extends BaseDatabaseModel
         // Clear cart
         (new CartModel(['ignore_request' => true]))->clear();
 
+        // Generate download tokens for digital products
+        $this->generateDownloadTokens($orderId);
+
         $this->sendOrderConfirmation($orderId, $order);
 
         return $paymentId;
+    }
+
+    private function generateDownloadTokens(int $orderId): void
+    {
+        try {
+            $params    = ComponentHelper::getParams('com_sanctuaryshop');
+            $expiryDays = (int) $params->get('download_expiry_days', 30);
+            $maxDl      = (int) $params->get('download_max_per_token', 5);
+
+            $db    = $this->getDatabase();
+            $user  = Factory::getApplication()->getIdentity();
+            $now   = Factory::getDate()->toSql();
+            $expires = $expiryDays > 0
+                ? Factory::getDate('+' . $expiryDays . ' days')->toSql()
+                : null;
+
+            // Load order items with their product type
+            $query = $db->getQuery(true)
+                ->select('oi.id AS order_item_id, oi.product_id, oi.quantity, p.product_type')
+                ->from($db->quoteName('#__sanctuaryshop_order_items', 'oi'))
+                ->leftJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = oi.product_id')
+                ->where('oi.order_id = ' . $orderId)
+                ->where("p.product_type = 'digital'");
+            $items = $db->setQuery($query)->loadObjectList() ?: [];
+
+            foreach ($items as $item) {
+                // Load all files for this product
+                $fQuery = $db->getQuery(true)
+                    ->select('id')
+                    ->from($db->quoteName('#__sanctuaryshop_product_files'))
+                    ->where('product_id = ' . (int) $item->product_id);
+                $fileIds = $db->setQuery($fQuery)->loadColumn() ?: [];
+
+                foreach ($fileIds as $fileId) {
+                    $token = bin2hex(random_bytes(32)); // 64-char hex
+                    $row   = (object) [
+                        'token'          => $token,
+                        'order_id'       => $orderId,
+                        'order_item_id'  => (int) $item->order_item_id,
+                        'product_id'     => (int) $item->product_id,
+                        'file_id'        => (int) $fileId,
+                        'user_id'        => (int) $user->id,
+                        'download_count' => 0,
+                        'max_downloads'  => $maxDl,
+                        'expires'        => $expires,
+                        'revoked'        => 0,
+                        'created'        => $now,
+                    ];
+                    $db->insertObject('#__sanctuaryshop_download_tokens', $row);
+                }
+            }
+        } catch (\Exception $e) {
+            // Non-fatal — don't block order completion
+        }
     }
 
     private function sendOrderConfirmation(int $orderId, object $order): void

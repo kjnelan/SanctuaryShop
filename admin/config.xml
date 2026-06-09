@@ -16,4 +16,9 @@
         <field name="products_per_page" type="number" label="COM_SANCTUARYSHOP_CONFIG_PRODUCTS_PER_PAGE" default="12" min="1" class="form-control" />
         <field name="notify_email" type="email" label="COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL" class="form-control" hint="Order notification recipient" />
     </fieldset>
+    <fieldset name="downloads" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOADS_LABEL">
+        <field name="download_path" type="text" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOAD_PATH" class="form-control" hint="/var/downloads/sanctuaryshop" />
+        <field name="download_expiry_days" type="number" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOAD_EXPIRY" default="30" min="0" class="form-control" hint="0 = never expire" />
+        <field name="download_max_per_token" type="number" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOAD_MAX" default="5" min="1" class="form-control" />
+    </fieldset>
 </config>

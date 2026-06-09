@@ -1,0 +1,43 @@
+<?php
+namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Downloads;
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Toolbar\Toolbar;
+use Joomla\CMS\Toolbar\ToolbarHelper;
+
+class HtmlView extends BaseHtmlView
+{
+    protected $items;
+    protected $pagination;
+    protected $state;
+
+    public function display($tpl = null): void
+    {
+        $this->items      = $this->get('Items');
+        $this->pagination = $this->get('Pagination');
+        $this->state      = $this->get('State');
+
+        if (count($errors = $this->get('Errors'))) {
+            throw new GenericDataException(implode("\n", $errors), 500);
+        }
+
+        $this->addToolbar();
+        parent::display($tpl);
+    }
+
+    protected function addToolbar(): void
+    {
+        $toolbar = Toolbar::getInstance();
+        ToolbarHelper::title('COM_SANCTUARYSHOP_DOWNLOADS', 'download');
+        $toolbar->delete('downloads.revoke')
+            ->text('COM_SANCTUARYSHOP_TOOLBAR_REVOKE')
+            ->message('COM_SANCTUARYSHOP_CONFIRM_REVOKE')
+            ->listCheck(true);
+        $toolbar->delete('downloads.delete')
+            ->message('JGLOBAL_CONFIRM_DELETE')
+            ->listCheck(true);
+    }
+}

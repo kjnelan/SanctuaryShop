@@ -3,6 +3,12 @@
     <fieldset name="details">
         <field name="id" type="hidden" />
         <field name="title" type="text" label="JGLOBAL_TITLE" required="true" maxlength="255" class="form-control" />
+        <field name="product_type" type="list" label="COM_SANCTUARYSHOP_FIELD_PRODUCT_TYPE" default="physical" class="form-select">
+            <option value="physical">COM_SANCTUARYSHOP_PRODUCT_TYPE_PHYSICAL</option>
+            <option value="digital">COM_SANCTUARYSHOP_PRODUCT_TYPE_DIGITAL</option>
+            <option value="subscription">COM_SANCTUARYSHOP_PRODUCT_TYPE_SUBSCRIPTION</option>
+            <option value="service">COM_SANCTUARYSHOP_PRODUCT_TYPE_SERVICE</option>
+        </field>
         <field name="alias" type="text" label="JFIELD_ALIAS_LABEL" hint="JFIELD_ALIAS_PLACEHOLDER" maxlength="400" class="form-control" />
         <field name="description" type="editor" label="JGLOBAL_DESCRIPTION" buttons="true" hide="readmore" filter="safehtml" />
         <field name="price" type="number" label="COM_SANCTUARYSHOP_FIELD_PRICE" required="true" min="0" step="0.01" class="form-control" />

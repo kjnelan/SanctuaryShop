@@ -13,12 +13,17 @@ class HtmlView extends BaseHtmlView
     protected $form;
     protected $item;
     protected $state;
+    public $productFiles = [];
 
     public function display($tpl = null): void
     {
         $this->form  = $this->get('Form');
         $this->item  = $this->get('Item');
         $this->state = $this->get('State');
+
+        if (!empty($this->item->id) && $this->item->product_type === 'digital') {
+            $this->productFiles = $this->getModel()->getProductFiles((int) $this->item->id);
+        }
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
