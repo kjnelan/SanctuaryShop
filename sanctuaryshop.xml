@@ -49,9 +49,9 @@
     <administration>
         <menu link="option=com_sanctuaryshop">COM_SANCTUARYSHOP</menu>
         <submenu>
-            <menu link="option=com_sanctuaryshop&amp;view=products">SanctuaryShopProducts</menu>
-            <menu link="option=com_categories&amp;extension=com_sanctuaryshop&amp;view=categories">SanctuaryShopCategories</menu>
-            <menu link="option=com_sanctuaryshop&amp;view=orders">SanctuaryShopOrders</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=products">Products</menu>
+            <menu link="option=com_categories&amp;extension=com_sanctuaryshop&amp;view=categories">Categories</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=orders">Orders</menu>
         </submenu>
         <files folder="admin">
             <folder>services</folder>
