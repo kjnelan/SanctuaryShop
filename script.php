@@ -34,7 +34,7 @@ class Com_SanctuaryshopInstallerScript
 
     private function createTables()
     {
-        $db     = \Joomla\CMS\Factory::getContainer()->get('db');
+        $db     = \Joomla\CMS\Factory::getDbo();
         $prefix = $db->getPrefix();
 
         $tables = [
