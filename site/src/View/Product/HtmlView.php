@@ -10,6 +10,8 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 class HtmlView extends BaseHtmlView
 {
     protected $item;
+    public $variants = [];
+    public $images   = [];
 
     public function display($tpl = null): void
     {
@@ -22,6 +24,33 @@ class HtmlView extends BaseHtmlView
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
+
+        // Load variants and images from DB
+        $db = Factory::getContainer()->get('db');
+
+        $vQuery = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__sanctuaryshop_product_variants'))
+            ->where($db->quoteName('product_id') . ' = ' . (int) $this->item->id)
+            ->order('ordering ASC, id ASC');
+        $variants = $db->setQuery($vQuery)->loadObjectList() ?: [];
+
+        foreach ($variants as $variant) {
+            $oQuery = $db->getQuery(true)
+                ->select('*')
+                ->from($db->quoteName('#__sanctuaryshop_product_variant_options'))
+                ->where($db->quoteName('variant_id') . ' = ' . (int) $variant->id)
+                ->order('ordering ASC, id ASC');
+            $variant->options = $db->setQuery($oQuery)->loadObjectList() ?: [];
+        }
+        $this->variants = $variants;
+
+        $iQuery = $db->getQuery(true)
+            ->select('*')
+            ->from($db->quoteName('#__sanctuaryshop_product_images'))
+            ->where($db->quoteName('product_id') . ' = ' . (int) $this->item->id)
+            ->order('ordering ASC, id ASC');
+        $this->images = $db->setQuery($iQuery)->loadObjectList() ?: [];
 
         $doc  = Factory::getDocument();
         $app  = Factory::getApplication();

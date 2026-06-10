@@ -14,6 +14,8 @@ class HtmlView extends BaseHtmlView
     protected $item;
     protected $state;
     public $productFiles = [];
+    public $productVariants = [];
+    public $productImages = [];
 
     public function display($tpl = null): void
     {
@@ -23,6 +25,11 @@ class HtmlView extends BaseHtmlView
 
         if (!empty($this->item->id) && $this->item->product_type === 'digital') {
             $this->productFiles = $this->getModel()->getProductFiles((int) $this->item->id);
+        }
+
+        if (!empty($this->item->id)) {
+            $this->productVariants = $this->getModel()->getProductVariants((int) $this->item->id);
+            $this->productImages   = $this->getModel()->getProductImages((int) $this->item->id);
         }
 
         if (count($errors = $this->get('Errors'))) {

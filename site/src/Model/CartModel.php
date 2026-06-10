@@ -11,6 +11,19 @@ class CartModel extends BaseDatabaseModel
     private const SESSION_KEY = 'sanctuaryshop.cart';
     private const COUPON_KEY  = 'sanctuaryshop.coupon';
 
+    /**
+     * Cart format: [ cart_key => ['product_id' => int, 'quantity' => int, 'variant_info' => array|null] ]
+     * cart_key = "{productId}_{variantHash}" where variantHash = md5(json_encode(sorted variant_info)) or "0"
+     */
+    private function makeCartKey(int $productId, ?array $variantInfo): string
+    {
+        if (empty($variantInfo)) {
+            return $productId . '_0';
+        }
+        ksort($variantInfo);
+        return $productId . '_' . substr(md5(json_encode($variantInfo)), 0, 8);
+    }
+
     public function getItems(): array
     {
         $cart     = $this->getSessionCart();
@@ -21,7 +34,12 @@ class CartModel extends BaseDatabaseModel
             return $items;
         }
 
-        $ids   = array_map('intval', array_keys($cart));
+        $ids = [];
+        foreach ($cart as $entry) {
+            $ids[] = (int) $entry['product_id'];
+        }
+        $ids = array_unique($ids);
+
         $query = $db->getQuery(true)
             ->select($db->quoteName(['id', 'title', 'price', 'sale_price', 'sku', 'image']))
             ->from($db->quoteName('#__sanctuaryshop_products'))
@@ -30,20 +48,36 @@ class CartModel extends BaseDatabaseModel
 
         $products = $db->setQuery($query)->loadObjectList('id');
 
-        foreach ($cart as $productId => $quantity) {
+        foreach ($cart as $cartKey => $entry) {
+            $productId   = (int) $entry['product_id'];
+            $quantity    = (int) $entry['quantity'];
+            $variantInfo = $entry['variant_info'] ?? null;
+
             if (!isset($products[$productId])) {
                 continue;
             }
             $p = $products[$productId];
             $unitPrice = (float) ($p->sale_price ?: $p->price);
-            $items[]   = (object) [
+
+            // Apply price modifier from variant
+            if (!empty($variantInfo)) {
+                $modifier = 0;
+                foreach ($variantInfo as $sel) {
+                    $modifier += (float) ($sel['price_modifier'] ?? 0);
+                }
+                $unitPrice += $modifier;
+            }
+
+            $items[] = (object) [
+                'cart_key'    => $cartKey,
                 'product_id'  => $productId,
                 'title'       => $p->title,
                 'sku'         => $p->sku,
                 'image'       => $p->image,
                 'unit_price'  => $unitPrice,
-                'quantity'    => (int) $quantity,
+                'quantity'    => $quantity,
                 'total_price' => $unitPrice * $quantity,
+                'variant_info' => $variantInfo,
             ];
         }
 
@@ -57,32 +91,45 @@ class CartModel extends BaseDatabaseModel
 
     public function getCount(): int
     {
-        return (int) array_sum($this->getSessionCart());
+        $cart = $this->getSessionCart();
+        return array_sum(array_column($cart, 'quantity'));
     }
 
-    public function addItem(int $productId, int $quantity): void
+    public function addItem(int $productId, int $quantity, ?array $variantInfo = null): void
     {
-        $cart = $this->getSessionCart();
-        $cart[$productId] = ($cart[$productId] ?? 0) + $quantity;
+        $cart    = $this->getSessionCart();
+        $cartKey = $this->makeCartKey($productId, $variantInfo);
+
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $quantity;
+        } else {
+            $cart[$cartKey] = [
+                'product_id'  => $productId,
+                'quantity'    => $quantity,
+                'variant_info' => $variantInfo,
+            ];
+        }
         $this->saveSessionCart($cart);
     }
 
     public function updateQuantities(array $quantities): void
     {
-        $cart = [];
-        foreach ($quantities as $productId => $qty) {
+        $cart    = $this->getSessionCart();
+        $newCart = [];
+        foreach ($quantities as $cartKey => $qty) {
             $qty = (int) $qty;
-            if ($qty > 0) {
-                $cart[(int) $productId] = $qty;
+            if ($qty > 0 && isset($cart[$cartKey])) {
+                $newCart[$cartKey] = $cart[$cartKey];
+                $newCart[$cartKey]['quantity'] = $qty;
             }
         }
-        $this->saveSessionCart($cart);
+        $this->saveSessionCart($newCart);
     }
 
-    public function removeItem(int $productId): void
+    public function removeItem(string $cartKey): void
     {
         $cart = $this->getSessionCart();
-        unset($cart[$productId]);
+        unset($cart[$cartKey]);
         $this->saveSessionCart($cart);
     }
 

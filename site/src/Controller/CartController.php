@@ -15,13 +15,42 @@ class CartController extends BaseController
     {
         Session::checkToken() or jexit('Invalid Token');
 
-        $productId = $this->input->getInt('product_id');
-        $quantity  = max(1, $this->input->getInt('quantity', 1));
+        $productId   = $this->input->getInt('product_id');
+        $quantity    = max(1, $this->input->getInt('quantity', 1));
+        $variantJson = $this->input->getString('variant_info', '');
+        $variantInfo = null;
+        if ($variantJson) {
+            $decoded = json_decode($variantJson, true);
+            if (is_array($decoded)) {
+                $variantInfo = $decoded;
+            }
+        }
 
         $model = $this->getModel('Cart', 'Site');
-        $model->addItem($productId, $quantity);
+        $model->addItem($productId, $quantity, $variantInfo);
 
         $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=cart', false));
+    }
+
+    public function buyNow(): void
+    {
+        Session::checkToken() or jexit('Invalid Token');
+
+        $productId   = $this->input->getInt('product_id');
+        $quantity    = max(1, $this->input->getInt('quantity', 1));
+        $variantJson = $this->input->getString('variant_info', '');
+        $variantInfo = null;
+        if ($variantJson) {
+            $decoded = json_decode($variantJson, true);
+            if (is_array($decoded)) {
+                $variantInfo = $decoded;
+            }
+        }
+
+        $model = $this->getModel('Cart', 'Site');
+        $model->addItem($productId, $quantity, $variantInfo);
+
+        $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=checkout', false));
     }
 
     public function update(): void
@@ -39,9 +68,9 @@ class CartController extends BaseController
     {
         Session::checkToken() or jexit('Invalid Token');
 
-        $productId = $this->input->getInt('product_id');
-        $model = $this->getModel('Cart', 'Site');
-        $model->removeItem($productId);
+        $cartKey = $this->input->getString('cart_key', '');
+        $model   = $this->getModel('Cart', 'Site');
+        $model->removeItem($cartKey);
 
         $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&view=cart', false));
     }

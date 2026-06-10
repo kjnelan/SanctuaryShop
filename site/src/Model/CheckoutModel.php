@@ -61,11 +61,16 @@ class CheckoutModel extends BaseDatabaseModel
         $orderId = (int) $db->insertid();
 
         foreach ($cartItems as $item) {
+            $variantInfoJson = null;
+            if (!empty($item->variant_info)) {
+                $variantInfoJson = json_encode($item->variant_info);
+            }
             $line = (object) [
                 'order_id'    => $orderId,
                 'product_id'  => (int) $item->product_id,
                 'title'       => $item->title,
                 'sku'         => $item->sku,
+                'variant_info' => $variantInfoJson,
                 'quantity'    => (int) $item->quantity,
                 'unit_price'  => $item->unit_price,
                 'total_price' => $item->total_price,
