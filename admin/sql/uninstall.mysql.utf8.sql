@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS `#__sanctuaryshop_product_variant_options`;
+DROP TABLE IF EXISTS `#__sanctuaryshop_product_variants`;
+DROP TABLE IF EXISTS `#__sanctuaryshop_product_images`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_coupons`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_download_tokens`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_product_files`;
