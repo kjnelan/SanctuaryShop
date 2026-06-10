@@ -5,10 +5,12 @@
         <field name="status" type="list" label="JSTATUS" class="form-select">
             <option value="pending">COM_SANCTUARYSHOP_ORDER_STATUS_PENDING</option>
             <option value="processing">COM_SANCTUARYSHOP_ORDER_STATUS_PROCESSING</option>
+            <option value="shipped">COM_SANCTUARYSHOP_ORDER_STATUS_SHIPPED</option>
             <option value="completed">COM_SANCTUARYSHOP_ORDER_STATUS_COMPLETED</option>
             <option value="cancelled">COM_SANCTUARYSHOP_ORDER_STATUS_CANCELLED</option>
             <option value="refunded">COM_SANCTUARYSHOP_ORDER_STATUS_REFUNDED</option>
         </field>
-        <field name="notes" type="textarea" label="COM_SANCTUARYSHOP_FIELD_NOTES" rows="4" class="form-control" />
+        <field name="tracking_number" type="text" label="COM_SANCTUARYSHOP_TRACKING_NUMBER" maxlength="255" class="form-control" />
+        <field name="notes" type="textarea" label="COM_SANCTUARYSHOP_ORDER_NOTES" rows="5" class="form-control" />
     </fieldset>
 </form>

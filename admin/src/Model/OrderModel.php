@@ -42,4 +42,33 @@ class OrderModel extends AdminModel
     {
         return parent::getTable($name, $prefix, $options);
     }
+
+    public function updateStatus(int $orderId, string $status, string $trackingNumber = ''): bool
+    {
+        try {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__sanctuaryshop_orders'))
+                ->set($db->quoteName('status') . ' = ' . $db->quote($status))
+                ->set($db->quoteName('modified') . ' = ' . $db->quote(Factory::getDate()->toSql()))
+                ->where($db->quoteName('id') . ' = ' . (int) $orderId);
+
+            if ($trackingNumber !== '') {
+                $query->set($db->quoteName('tracking_number') . ' = ' . $db->quote($trackingNumber));
+            }
+
+            $db->setQuery($query)->execute();
+            return true;
+        } catch (\Exception $e) {
+            $this->setError($e->getMessage());
+            return false;
+        }
+    }
+
+    public function save($data)
+    {
+        // Ensure tracking_number is preserved
+        $result = parent::save($data);
+        return $result;
+    }
 }
