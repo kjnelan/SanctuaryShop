@@ -4,6 +4,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Order;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -33,7 +34,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $toolbar = Toolbar::getInstance();
-        ToolbarHelper::title('COM_SANCTUARYSHOP_ORDER_VIEW', 'eye');
+        ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_ORDER_VIEW'), 'eye');
         $toolbar->apply('order.apply');
         $toolbar->save('order.save');
         $toolbar->cancel('order.cancel', 'JTOOLBAR_CLOSE');

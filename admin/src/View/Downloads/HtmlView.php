@@ -4,6 +4,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Downloads;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -31,7 +32,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $toolbar = Toolbar::getInstance();
-        ToolbarHelper::title('COM_SANCTUARYSHOP_DOWNLOADS', 'download');
+        ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_DOWNLOADS'), 'download');
         $toolbar->delete('downloads.revoke')
             ->text('COM_SANCTUARYSHOP_TOOLBAR_REVOKE')
             ->message('COM_SANCTUARYSHOP_CONFIRM_REVOKE')

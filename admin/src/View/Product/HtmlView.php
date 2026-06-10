@@ -4,6 +4,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Product;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -44,7 +45,7 @@ class HtmlView extends BaseHtmlView
     {
         $isNew   = ($this->item->id == 0);
         $toolbar = Toolbar::getInstance();
-        ToolbarHelper::title($isNew ? 'COM_SANCTUARYSHOP_PRODUCT_NEW' : 'COM_SANCTUARYSHOP_PRODUCT_EDIT', 'box-add');
+        ToolbarHelper::title($isNew ? Text::_('COM_SANCTUARYSHOP_PRODUCT_NEW') : Text::_('COM_SANCTUARYSHOP_PRODUCT_EDIT'), 'box-add');
         $toolbar->apply('product.apply');
         $toolbar->save('product.save');
         $toolbar->save2new('product.save2new');

@@ -6,6 +6,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\GenericDataException;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Toolbar;
@@ -45,7 +46,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $toolbar = Toolbar::getInstance();
-        ToolbarHelper::title('COM_SANCTUARYSHOP_PRODUCTS', 'cart');
+        ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_PRODUCTS'), 'cart');
         $toolbar->addNew('product.add');
         $toolbar->publish('products.publish')->listCheck(true);
         $toolbar->unpublish('products.unpublish')->listCheck(true);
