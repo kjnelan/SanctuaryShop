@@ -4,6 +4,7 @@ namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\View\Settings;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
@@ -22,7 +23,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar(): void
     {
         $toolbar = Toolbar::getInstance();
-        ToolbarHelper::title('COM_SANCTUARYSHOP_SETTINGS', 'cog');
+        ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_SETTINGS'), 'cog');
         $toolbar->apply('settings.save');
         $toolbar->cancel('settings.cancel', 'JTOOLBAR_CANCEL');
     }
