@@ -163,6 +163,45 @@ class Com_SanctuaryshopInstallerScript
                     UNIQUE KEY `idx_code` (`code`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ",
+
+            "{$prefix}sanctuaryshop_product_variants" => "
+                CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_product_variants` (
+                    `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `product_id` INT UNSIGNED NOT NULL,
+                    `name`       VARCHAR(100) NOT NULL DEFAULT '',
+                    `ordering`   INT NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_product` (`product_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+
+            "{$prefix}sanctuaryshop_product_variant_options" => "
+                CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_product_variant_options` (
+                    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `variant_id`     INT UNSIGNED NOT NULL,
+                    `product_id`     INT UNSIGNED NOT NULL,
+                    `label`          VARCHAR(100) NOT NULL DEFAULT '',
+                    `price_modifier` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+                    `sku_suffix`     VARCHAR(50) NOT NULL DEFAULT '',
+                    `stock`          INT NOT NULL DEFAULT -1,
+                    `ordering`       INT NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_variant`  (`variant_id`),
+                    KEY `idx_product`  (`product_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
+
+            "{$prefix}sanctuaryshop_product_images" => "
+                CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_product_images` (
+                    `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `product_id` INT UNSIGNED NOT NULL,
+                    `image`      VARCHAR(1024) NOT NULL DEFAULT '',
+                    `alt_text`   VARCHAR(255) NOT NULL DEFAULT '',
+                    `ordering`   INT NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_product` (`product_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ",
         ];
 
         foreach ($tables as $name => $sql) {
@@ -196,6 +235,30 @@ class Com_SanctuaryshopInstallerScript
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage(
                 'SanctuaryShop installer (discount): ' . $e->getMessage(), 'warning'
+            );
+        }
+
+        // v1.3 — add variant_info column to order_items
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_order_items` LIKE 'variant_info'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_order_items` ADD COLUMN `variant_info` TEXT NULL DEFAULT NULL AFTER `sku`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage(
+                'SanctuaryShop installer (variant_info): ' . $e->getMessage(), 'warning'
+            );
+        }
+
+        // v1.3 — add tracking_number column to orders
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'tracking_number'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `tracking_number` VARCHAR(255) NOT NULL DEFAULT '' AFTER `notes`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage(
+                'SanctuaryShop installer (tracking_number): ' . $e->getMessage(), 'warning'
             );
         }
     }

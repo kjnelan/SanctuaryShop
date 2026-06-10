@@ -7,8 +7,8 @@
     <creationDate>2026-06-09</creationDate>
     <copyright>Copyright (C) 2026 Sacred Wandering, Inc. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.2.0</version>
-    <schemaversion>1.2.0</schemaversion>
+    <version>1.3.0</version>
+    <schemaversion>1.3.0</schemaversion>
     <scriptfile>script.php</scriptfile>
     <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
 
@@ -54,6 +54,8 @@
             <menu link="option=com_sanctuaryshop&amp;view=orders">COM_SANCTUARYSHOP_ORDERS</menu>
             <menu link="option=com_sanctuaryshop&amp;view=downloads">COM_SANCTUARYSHOP_DOWNLOADS</menu>
             <menu link="option=com_sanctuaryshop&amp;view=coupons">COM_SANCTUARYSHOP_COUPONS</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=settings">COM_SANCTUARYSHOP_SETTINGS</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=help">COM_SANCTUARYSHOP_HELP</menu>
         </submenu>
         <files folder="admin">
             <folder>services</folder>
