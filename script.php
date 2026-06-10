@@ -11,13 +11,13 @@ class Com_SanctuaryshopInstallerScript
 
     public function install($parent)
     {
-        $this->createTables();
+        $this->createTables($parent);
         return true;
     }
 
     public function update($parent)
     {
-        $this->createTables();
+        $this->createTables($parent);
         return true;
     }
 
@@ -28,13 +28,20 @@ class Com_SanctuaryshopInstallerScript
 
     public function postflight($type, $parent)
     {
-        $this->createTables();
+        $this->createTables($parent);
         return true;
     }
 
-    private function createTables()
+    private function createTables($parent = null)
     {
-        $db     = \Joomla\CMS\Factory::getDbo();
+        // Use parent installer's database to avoid deprecated Factory::getDbo() notice in Joomla 6
+        if ($parent !== null && method_exists($parent, 'getDatabase')) {
+            $db = $parent->getDatabase();
+        } elseif ($parent !== null && method_exists($parent, 'getDbo')) {
+            $db = $parent->getDbo();
+        } else {
+            $db = \Joomla\CMS\Factory::getDbo();
+        }
         $prefix = $db->getPrefix();
 
         $tables = [
