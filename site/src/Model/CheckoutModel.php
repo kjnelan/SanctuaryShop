@@ -6,6 +6,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Mail\MailHelper;
+use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
 class CheckoutModel extends BaseDatabaseModel
@@ -278,7 +279,7 @@ class CheckoutModel extends BaseDatabaseModel
             $params   = ComponentHelper::getParams('com_sanctuaryshop');
             $notifyTo = $params->get('notify_email', '');
             $shopName = $params->get('shop_name', 'SanctuaryShop');
-            $config   = Factory::getApplication()->get('config');
+            $config   = Factory::getApplication()->getConfig();
             $db       = $this->getDatabase();
 
             // Load order items
@@ -332,7 +333,8 @@ class CheckoutModel extends BaseDatabaseModel
             }
             $recipients = array_unique($recipients);
 
-            $mailer = Factory::getMailer();
+            $mailerFactory = Factory::getContainer()->get(MailerFactoryInterface::class);
+            $mailer = $mailerFactory->createMailer();
             $mailer->setSender([$config->get('mailfrom'), $shopName]);
             $mailer->setSubject($subject);
             $mailer->isHtml(true);

@@ -81,7 +81,7 @@ class ProductsModel extends ListModel
     {
         parent::populateState($ordering, $direction);
         $app = \Joomla\CMS\Factory::getApplication();
-        $category = $app->input->get('filter', [], 'array')['category'] ?? null;
+        $category = $app->getInput()->get('filter', [], 'array')['category'] ?? null;
         if ($category !== null) {
             $this->setState('filter.category_id', (int) $category);
         }

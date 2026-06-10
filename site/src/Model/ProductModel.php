@@ -30,6 +30,6 @@ class ProductModel extends ItemModel
     protected function populateState(): void
     {
         $app = Factory::getApplication();
-        $this->setState('product.id', $app->input->getInt('id'));
+        $this->setState('product.id', $app->getInput()->getInt('id'));
     }
 }

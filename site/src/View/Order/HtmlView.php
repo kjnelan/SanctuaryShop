@@ -25,7 +25,7 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        $orderId    = $app->input->getInt('id');
+        $orderId    = $app->getInput()->getInt('id');
         $model      = $this->getModel();
         $this->order = $model->getOrder($orderId);
 

@@ -30,10 +30,10 @@ class HtmlView extends BaseHtmlView
         $app               = Factory::getApplication();
         $params            = ComponentHelper::getParams('com_sanctuaryshop');
         $this->currency    = strtoupper($params->get('currency', 'USD'));
-        $this->activeCatId = $app->input->getInt('catid', 0);
-        $this->search      = $app->input->getString('search', '');
-        $this->sort        = $app->input->getString('sort', '');
-        $this->activeType  = $app->input->getString('type', '');
+        $this->activeCatId = $app->getInput()->getInt('catid', 0);
+        $this->search      = $app->getInput()->getString('search', '');
+        $this->sort        = $app->getInput()->getString('sort', '');
+        $this->activeType  = $app->getInput()->getString('type', '');
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);

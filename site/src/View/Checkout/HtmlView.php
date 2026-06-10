@@ -35,7 +35,7 @@ class HtmlView extends BaseHtmlView
         $layout = $this->getLayout();
 
         if ($layout === 'confirmation') {
-            $this->orderId = Factory::getApplication()->input->getInt('order_id');
+            $this->orderId = Factory::getApplication()->getInput()->getInt('order_id');
             if ($this->orderId) {
                 $this->orderDownloads = $this->getOrderDownloads($this->orderId);
             }
@@ -66,7 +66,7 @@ class HtmlView extends BaseHtmlView
     {
         try {
             $user  = Factory::getApplication()->getIdentity();
-            $db    = Factory::getDbo();
+            $db    = Factory::getContainer()->get('db');
             $query = $db->getQuery(true)
                 ->select([
                     't.token', 't.download_count', 't.max_downloads', 't.expires', 't.revoked',

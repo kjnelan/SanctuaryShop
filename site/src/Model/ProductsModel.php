@@ -22,11 +22,11 @@ class ProductsModel extends ListModel
         $app    = Factory::getApplication();
         $params = ComponentHelper::getParams('com_sanctuaryshop');
 
-        $this->setState('filter.category_id', $app->input->getInt('catid', 0));
-        $this->setState('filter.search', $app->input->getString('search', ''));
-        $this->setState('filter.product_type', $app->input->getString('type', ''));
+        $this->setState('filter.category_id', $app->getInput()->getInt('catid', 0));
+        $this->setState('filter.search', $app->getInput()->getString('search', ''));
+        $this->setState('filter.product_type', $app->getInput()->getString('type', ''));
 
-        $sort = $app->input->getString('sort', '');
+        $sort = $app->getInput()->getString('sort', '');
         if ($sort === 'price_asc')  { $ordering = 'a.price';   $direction = 'ASC'; }
         elseif ($sort === 'price_desc') { $ordering = 'a.price'; $direction = 'DESC'; }
         elseif ($sort === 'newest')     { $ordering = 'a.created'; $direction = 'DESC'; }
