@@ -1,3 +1,6 @@
+# Claude Code session files
+.claude/
+
 # OS / editor artefacts
 .DS_Store
 Thumbs.db
