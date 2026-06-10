@@ -15,3 +15,4 @@ vendor/
 # Built/packaged installer
 *.zip
 pkg_sanctuaryshop*.zip
+com_sanctuaryshop_v*.zip
