@@ -34,14 +34,10 @@ class Com_SanctuaryshopInstallerScript
 
     private function createTables($parent = null)
     {
-        // Use parent installer's database to avoid deprecated Factory::getDbo() notice in Joomla 6
-        if ($parent !== null && method_exists($parent, 'getDatabase')) {
-            $db = $parent->getDatabase();
-        } elseif ($parent !== null && method_exists($parent, 'getDbo')) {
-            $db = $parent->getDbo();
-        } else {
-            $db = \Joomla\CMS\Factory::getDbo();
-        }
+        // Suppress E_USER_DEPRECATED so the notice doesn't leak into the AJAX JSON response
+        $prev = error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        $db   = \Joomla\CMS\Factory::getDbo();
+        error_reporting($prev);
         $prefix = $db->getPrefix();
 
         $tables = [
