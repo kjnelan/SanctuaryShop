@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="module" client="site" method="upgrade">
+    <name>mod_sanctuaryshop_cart</name>
+    <author>Kenneth J Nelan</author>
+    <authorEmail>ken.nelan@sacwan.net</authorEmail>
+    <version>1.0.0</version>
+    <description>SanctuaryShop mini cart module — shows cart item count with a dropdown summary.</description>
+    <namespace path="src">SanctuaryShop\Module\SanctuaryshopCart</namespace>
+    <files>
+        <filename module="mod_sanctuaryshop_cart">mod_sanctuaryshop_cart.php</filename>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+</extension>
