@@ -28,11 +28,31 @@
     </fieldset>
     <fieldset name="shop" label="COM_SANCTUARYSHOP_CONFIG_SHOP_LABEL">
         <field name="shop_name" type="text" label="COM_SANCTUARYSHOP_CONFIG_SHOP_NAME" class="form-control" />
+        <field name="shop_tagline" type="text" label="COM_SANCTUARYSHOP_CONFIG_SHOP_TAGLINE" class="form-control" />
+        <field name="store_email" type="email" label="COM_SANCTUARYSHOP_CONFIG_STORE_EMAIL" class="form-control" />
+        <field name="store_phone" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_PHONE" class="form-control" />
+        <field name="store_address" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_ADDRESS" class="form-control" />
+        <field name="store_city" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_CITY" class="form-control" />
+        <field name="store_state" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_STATE" class="form-control" />
+        <field name="store_postal_code" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_POSTAL" class="form-control" />
+        <field name="store_country" type="text" label="COM_SANCTUARYSHOP_CONFIG_STORE_COUNTRY" default="US" maxlength="2" class="form-control" />
         <field name="currency" type="text" label="COM_SANCTUARYSHOP_CONFIG_CURRENCY" default="USD" maxlength="3" class="form-control" />
         <field name="tax_rate" type="number" label="COM_SANCTUARYSHOP_CONFIG_TAX_RATE" default="0" min="0" max="100" step="0.01" class="form-control" hint="Percentage, e.g. 8.5" />
+        <field name="prices_include_tax" type="radio" label="COM_SANCTUARYSHOP_CONFIG_PRICES_INCLUDE_TAX" default="0" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
         <field name="tax_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_TAX_RULES" rows="4" class="form-control" hint="One rule per line: US=0 or US-TX=8.25. More specific rules win." />
         <field name="products_per_page" type="number" label="COM_SANCTUARYSHOP_CONFIG_PRODUCTS_PER_PAGE" default="12" min="1" class="form-control" />
         <field name="notify_email" type="email" label="COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL" class="form-control" hint="Order notification recipient" />
+        <field name="send_customer_confirmation" type="radio" label="COM_SANCTUARYSHOP_CONFIG_CUSTOMER_CONFIRMATION" default="1" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
+        <field name="guest_checkout" type="radio" label="COM_SANCTUARYSHOP_CONFIG_GUEST_CHECKOUT" default="1" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
+        <field name="require_phone" type="radio" label="COM_SANCTUARYSHOP_CONFIG_REQUIRE_PHONE" default="0" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
         <field name="require_terms" type="radio" label="COM_SANCTUARYSHOP_CONFIG_REQUIRE_TERMS" default="1" class="form-check form-check-inline">
             <option value="1">JYES</option><option value="0">JNO</option>
         </field>
@@ -41,9 +61,21 @@
         <field name="low_stock_threshold" type="number" label="COM_SANCTUARYSHOP_CONFIG_LOW_STOCK" default="5" min="0" max="999999" class="form-control" hint="Dashboard alert threshold for physical products." />
     </fieldset>
     <fieldset name="shipping" label="COM_SANCTUARYSHOP_CONFIG_SHIPPING_LABEL">
+        <field name="shipping_enabled" type="radio" label="COM_SANCTUARYSHOP_CONFIG_SHIPPING_ENABLED" default="1" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
         <field name="shipping_flat_rate" type="number" label="COM_SANCTUARYSHOP_CONFIG_FLAT_RATE" default="0" min="0" step="0.01" class="form-control" hint="0 = free shipping" />
+        <field name="shipping_handling_fee" type="number" label="COM_SANCTUARYSHOP_CONFIG_HANDLING_FEE" default="0" min="0" step="0.01" class="form-control" />
         <field name="shipping_free_threshold" type="number" label="COM_SANCTUARYSHOP_CONFIG_FREE_THRESHOLD" default="0" min="0" step="0.01" class="form-control" hint="Cart subtotal for free shipping. 0 = always charge" />
+        <field name="shipping_free_after_discount" type="radio" label="COM_SANCTUARYSHOP_CONFIG_FREE_AFTER_DISCOUNT" default="0" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
         <field name="shipping_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_SHIPPING_RULES" rows="4" class="form-control" hint="One rule per line: US=5 or US-TX=8. More specific rules win." />
+    </fieldset>
+    <fieldset name="inventory" label="COM_SANCTUARYSHOP_CONFIG_INVENTORY_LABEL">
+        <field name="allow_backorders" type="radio" label="COM_SANCTUARYSHOP_CONFIG_ALLOW_BACKORDERS" default="0" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
     </fieldset>
     <fieldset name="downloads" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOADS_LABEL">
         <field name="download_path" type="text" label="COM_SANCTUARYSHOP_CONFIG_DOWNLOAD_PATH" class="form-control" hint="/var/downloads/sanctuaryshop" />

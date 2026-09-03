@@ -53,6 +53,10 @@ foreach ($this->cartItems as $item) {
                             <label class="form-label"><?php echo Text::_('COM_SANCTUARYSHOP_EMAIL'); ?> <span class="text-danger">*</span></label>
                             <input type="email" id="billing_email" class="form-control" required autocomplete="email">
                         </div>
+                        <div class="col-12" id="billing-phone-row">
+                            <label class="form-label"><?php echo Text::_('COM_SANCTUARYSHOP_PHONE'); ?></label>
+                            <input type="tel" id="billing_phone" class="form-control" autocomplete="tel"<?php echo (int) ComponentHelper::getParams('com_sanctuaryshop')->get('require_phone', 0) === 1 ? ' required' : ''; ?>>
+                        </div>
                         <div class="col-12">
                             <label class="form-label"><?php echo Text::_('COM_SANCTUARYSHOP_ADDRESS'); ?> <span class="text-danger">*</span></label>
                             <input type="text" id="billing_address1" class="form-control mb-2" placeholder="<?php echo Text::_('COM_SANCTUARYSHOP_STREET_ADDRESS'); ?>" required autocomplete="address-line1">
@@ -133,7 +137,7 @@ foreach ($this->cartItems as $item) {
                     <div id="card-container" class="mb-3 p-3 border rounded bg-light" style="min-height:90px"></div>
                     <div id="payment-message" class="mb-3" style="display:none"></div>
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="accept_terms" required>
+                        <input class="form-check-input" type="checkbox" id="accept_terms"<?php echo (int) ComponentHelper::getParams('com_sanctuaryshop')->get('require_terms', 1) === 1 ? ' required' : ''; ?>>
                         <label class="form-check-label small" for="accept_terms">
                             I agree to the <?php if ($termsUrl = ComponentHelper::getParams('com_sanctuaryshop')->get('terms_url', '')) : ?><a href="<?php echo $this->escape($termsUrl); ?>" target="_blank" rel="noopener">terms and conditions</a><?php else : ?>terms and conditions<?php endif; ?>.
                         </label>
@@ -225,6 +229,11 @@ foreach ($this->cartItems as $item) {
     const discount = <?php echo json_encode((float) $this->discount); ?>;
     const flatShipping = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_flat_rate', 0)); ?>;
     const freeShippingThreshold = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_free_threshold', 0)); ?>;
+    const handlingFee = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_handling_fee', 0)); ?>;
+    const shippingEnabled = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_enabled', 1) === 1); ?>;
+    const freeAfterDiscount = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_free_after_discount', 0) === 1); ?>;
+    const pricesIncludeTax = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('prices_include_tax', 0) === 1); ?>;
+    const requirePhone = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('require_phone', 0) === 1); ?>;
 
     const payBtn = document.getElementById('pay-button');
     const msgBox = document.getElementById('payment-message');
@@ -248,13 +257,17 @@ foreach ($this->cartItems as $item) {
         const country = document.getElementById('billing_country')?.value || 'US';
         const state = document.getElementById('billing_state_field')?.value || '';
         const taxRate = locationRate(taxRules, country, state, baseTax);
-        const tax = Math.round(Math.max(0, subtotal - discount) * taxRate) / 100;
+        const afterDiscount = Math.max(0, subtotal - discount);
+        const tax = pricesIncludeTax && taxRate > 0
+            ? Math.round((afterDiscount - (afterDiscount / (1 + taxRate / 100))) * 100) / 100
+            : Math.round(afterDiscount * taxRate) / 100;
         const same = document.getElementById('same_as_billing')?.checked ?? true;
         const shipCountry = same ? country : (document.getElementById('shipping_country')?.value || country);
         const shipState = same ? state : (document.getElementById('shipping_state_field')?.value || '');
-        const shippingRate = locationRate(shippingRules, shipCountry, shipState, flatShipping);
-        const shipping = freeShippingThreshold > 0 && subtotal >= freeShippingThreshold ? 0 : shippingRate;
-        const total = Math.round((Math.max(0, subtotal - discount) + tax + shipping) * 100) / 100;
+        const shippingRate = locationRate(shippingRules, shipCountry, shipState, flatShipping) + Math.max(0, handlingFee);
+        const thresholdBase = freeAfterDiscount ? afterDiscount : subtotal;
+        const shipping = !shippingEnabled || freeShippingThreshold > 0 && thresholdBase >= freeShippingThreshold ? 0 : shippingRate;
+        const total = Math.round((afterDiscount + tax + shipping) * 100) / 100;
         document.getElementById('checkout-tax') && (document.getElementById('checkout-tax').textContent = <?php echo json_encode($sym); ?> + tax.toFixed(2));
         document.getElementById('checkout-shipping') && (document.getElementById('checkout-shipping').textContent = <?php echo json_encode($sym); ?> + shipping.toFixed(2));
         document.getElementById('checkout-total') && (document.getElementById('checkout-total').textContent = <?php echo json_encode($sym); ?> + total.toFixed(2));
@@ -306,6 +319,7 @@ foreach ($this->cartItems as $item) {
 
     payBtn.addEventListener('click', async () => {
         const required = ['billing_firstname','billing_lastname','billing_email','billing_address1','billing_city','billing_zip'];
+        if (requirePhone) required.push('billing_phone');
         for (const id of required) {
             const el = document.getElementById(id);
             if (!el.value.trim()) {
@@ -329,6 +343,7 @@ foreach ($this->cartItems as $item) {
                 'jform[billing_firstname]': document.getElementById('billing_firstname').value,
                 'jform[billing_lastname]':  document.getElementById('billing_lastname').value,
                 'jform[billing_email]':     document.getElementById('billing_email').value,
+                'jform[billing_phone]':      document.getElementById('billing_phone').value,
                 'jform[billing][address_line_1]':   document.getElementById('billing_address1').value,
                 'jform[billing][address_line_2]':   document.getElementById('billing_address2').value,
                 'jform[billing][locality]':         document.getElementById('billing_city').value,

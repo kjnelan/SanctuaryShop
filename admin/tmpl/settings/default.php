@@ -24,6 +24,19 @@ $p = $this->params;
                         <input type="text" class="form-control" id="shop_name" name="shop_name" value="<?php echo $this->escape($p->get('shop_name', '')); ?>">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label fw-semibold" for="shop_tagline"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SHOP_TAGLINE'); ?></label>
+                        <input type="text" class="form-control" id="shop_tagline" name="shop_tagline" value="<?php echo $this->escape($p->get('shop_tagline', '')); ?>">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="store_email"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_EMAIL'); ?></label><input type="email" class="form-control" id="store_email" name="store_email" value="<?php echo $this->escape($p->get('store_email', '')); ?>"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="store_phone"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_PHONE'); ?></label><input type="text" class="form-control" id="store_phone" name="store_phone" value="<?php echo $this->escape($p->get('store_phone', '')); ?>"></div>
+                        <div class="col-12"><label class="form-label fw-semibold" for="store_address"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_ADDRESS'); ?></label><input type="text" class="form-control" id="store_address" name="store_address" value="<?php echo $this->escape($p->get('store_address', '')); ?>"></div>
+                        <div class="col-md-5"><label class="form-label fw-semibold" for="store_city"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_CITY'); ?></label><input type="text" class="form-control" id="store_city" name="store_city" value="<?php echo $this->escape($p->get('store_city', '')); ?>"></div>
+                        <div class="col-md-3"><label class="form-label fw-semibold" for="store_state"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_STATE'); ?></label><input type="text" class="form-control" id="store_state" name="store_state" value="<?php echo $this->escape($p->get('store_state', '')); ?>"></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="store_postal_code"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_POSTAL'); ?></label><input type="text" class="form-control" id="store_postal_code" name="store_postal_code" value="<?php echo $this->escape($p->get('store_postal_code', '')); ?>"></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="store_country"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_COUNTRY'); ?></label><input type="text" class="form-control" id="store_country" name="store_country" value="<?php echo $this->escape($p->get('store_country', 'US')); ?>" maxlength="2"></div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-semibold" for="currency"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_CURRENCY'); ?></label>
                         <select class="form-select" id="currency" name="currency">
                             <?php foreach (['USD' => 'USD — US Dollar', 'EUR' => 'EUR — Euro', 'GBP' => 'GBP — British Pound', 'CAD' => 'CAD — Canadian Dollar', 'AUD' => 'AUD — Australian Dollar'] as $code => $label) : ?>
@@ -34,6 +47,7 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="tax_rate"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TAX_RATE'); ?></label>
                         <input type="number" class="form-control" id="tax_rate" name="tax_rate" value="<?php echo (float) $p->get('tax_rate', 0); ?>" min="0" max="100" step="0.01">
+                        <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="prices_include_tax" name="prices_include_tax" value="1"<?php echo (int) $p->get('prices_include_tax', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="prices_include_tax"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PRICES_INCLUDE_TAX'); ?></label></div>
                         <textarea class="form-control mt-2" id="tax_rules" name="tax_rules" rows="4" placeholder="US=0&#10;US-TX=8.25"><?php echo $this->escape($p->get('tax_rules', '')); ?></textarea>
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TAX_RATE_NOTE'); ?></div>
                     </div>
@@ -45,6 +59,11 @@ $p = $this->params;
                         <label class="form-label fw-semibold" for="notify_email"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL'); ?></label>
                         <input type="email" class="form-control" id="notify_email" name="notify_email" value="<?php echo $this->escape($p->get('notify_email', '')); ?>">
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL_NOTE'); ?></div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4"><label class="form-label fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_CUSTOMER_CONFIRMATION'); ?></label><div class="form-check"><input class="form-check-input" type="checkbox" id="send_customer_confirmation" name="send_customer_confirmation" value="1"<?php echo (int) $p->get('send_customer_confirmation', 1) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="send_customer_confirmation"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_CUSTOMER_CONFIRMATION_NOTE'); ?></label></div></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_GUEST_CHECKOUT'); ?></label><div class="form-check"><input class="form-check-input" type="checkbox" id="guest_checkout" name="guest_checkout" value="1"<?php echo (int) $p->get('guest_checkout', 1) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="guest_checkout"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_GUEST_CHECKOUT_NOTE'); ?></label></div></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_REQUIRE_PHONE'); ?></label><div class="form-check"><input class="form-check-input" type="checkbox" id="require_phone" name="require_phone" value="1"<?php echo (int) $p->get('require_phone', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="require_phone"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_REQUIRE_PHONE_NOTE'); ?></label></div></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="terms_url"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TERMS_URL'); ?></label>
@@ -147,10 +166,15 @@ $p = $this->params;
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="mb-3">
+                        <label class="form-label fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SHIPPING_ENABLED'); ?></label>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" id="shipping_enabled" name="shipping_enabled" value="1"<?php echo (int) $p->get('shipping_enabled', 1) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="shipping_enabled"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SHIPPING_ENABLED_NOTE'); ?></label></div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-semibold" for="shipping_flat_rate"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FLAT_RATE'); ?></label>
                         <input type="number" class="form-control" id="shipping_flat_rate" name="shipping_flat_rate" value="<?php echo (float) $p->get('shipping_flat_rate', 0); ?>" min="0" step="0.01">
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FLAT_RATE_NOTE'); ?></div>
                     </div>
+                    <div class="row g-3 mb-3"><div class="col-md-6"><label class="form-label fw-semibold" for="shipping_handling_fee"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_HANDLING_FEE'); ?></label><input type="number" class="form-control" id="shipping_handling_fee" name="shipping_handling_fee" value="<?php echo (float) $p->get('shipping_handling_fee', 0); ?>" min="0" step="0.01"></div><div class="col-md-6"><label class="form-label fw-semibold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FREE_AFTER_DISCOUNT'); ?></label><div class="form-check"><input class="form-check-input" type="checkbox" id="shipping_free_after_discount" name="shipping_free_after_discount" value="1"<?php echo (int) $p->get('shipping_free_after_discount', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="shipping_free_after_discount"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FREE_AFTER_DISCOUNT_NOTE'); ?></label></div></div></div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="shipping_free_threshold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FREE_THRESHOLD'); ?></label>
                         <input type="number" class="form-control" id="shipping_free_threshold" name="shipping_free_threshold" value="<?php echo (float) $p->get('shipping_free_threshold', 0); ?>" min="0" step="0.01">
@@ -161,6 +185,10 @@ $p = $this->params;
             </div>
         </div>
     </div>
+    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+
+    <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'inventory', Text::_('COM_SANCTUARYSHOP_TAB_INVENTORY')); ?>
+    <div class="row"><div class="col-md-8"><div class="card mb-3"><div class="card-body"><div class="form-check"><input class="form-check-input" type="checkbox" id="allow_backorders" name="allow_backorders" value="1"<?php echo (int) $p->get('allow_backorders', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="allow_backorders"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ALLOW_BACKORDERS'); ?></label></div></div></div></div></div>
     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
     <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'downloads', Text::_('COM_SANCTUARYSHOP_TAB_DOWNLOADS')); ?>

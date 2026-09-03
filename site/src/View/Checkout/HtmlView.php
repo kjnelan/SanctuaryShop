@@ -56,13 +56,17 @@ class HtmlView extends BaseHtmlView
             $this->subtotal  = $cartModel->getSubtotal();
             $this->discount  = $cartModel->getCouponDiscount($this->subtotal);
             $afterDiscount   = max(0, $this->subtotal - $this->discount);
-            $this->tax       = round($afterDiscount * $this->taxRate / 100, 2);
+            $this->tax       = (int) $params->get('prices_include_tax', 0) === 1 && $this->taxRate > 0
+                ? round($afterDiscount - ($afterDiscount / (1 + $this->taxRate / 100)), 2)
+                : round($afterDiscount * $this->taxRate / 100, 2);
 
             $flatRate          = (float) $params->get('shipping_flat_rate', 0);
             $freeThreshold     = (float) $params->get('shipping_free_threshold', 0);
             $requiresShipping  = (bool) array_filter($this->cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
             $shippingRate      = CheckoutModel::locationRate($params->get('shipping_rules', ''), ['country' => 'US'], $flatRate);
-            $this->shipping    = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $shippingRate);
+            $shippingBase      = $shippingRate + max(0, (float) $params->get('shipping_handling_fee', 0));
+            $thresholdBase     = (int) $params->get('shipping_free_after_discount', 0) === 1 ? $afterDiscount : $this->subtotal;
+            $this->shipping    = !$requiresShipping || (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThreshold > 0 && $thresholdBase >= $freeThreshold) ? 0.00 : $shippingBase);
             $this->total       = round($afterDiscount + $this->tax + $this->shipping, 2);
 
             if ($this->paymentProvider === 'square') {

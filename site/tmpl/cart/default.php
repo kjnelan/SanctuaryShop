@@ -11,11 +11,15 @@ $currency    = strtoupper($params->get('currency', 'USD'));
 $taxRate     = (float) $params->get('tax_rate', 0);
 $currencyMap = ['USD'=>'$','EUR'=>'€','GBP'=>'£','CAD'=>'CA$','AUD'=>'A$'];
 $sym         = $currencyMap[$currency] ?? $currency . ' ';
-$tax         = round($this->subtotal * $taxRate / 100, 2);
-$flatRate    = (float) $params->get('shipping_flat_rate', 0);
-$freeThresh  = (float) $params->get('shipping_free_threshold', 0);
-$shipping    = ($freeThresh > 0 && $this->subtotal >= $freeThresh) ? 0.00 : $flatRate;
 $afterDisc   = max(0, $this->subtotal - $this->couponDiscount);
+$tax         = (int) $params->get('prices_include_tax', 0) === 1 && $taxRate > 0
+    ? round($afterDisc - ($afterDisc / (1 + $taxRate / 100)), 2)
+    : round($afterDisc * $taxRate / 100, 2);
+$flatRate    = (float) $params->get('shipping_flat_rate', 0);
+$handlingFee = (float) $params->get('shipping_handling_fee', 0);
+$freeThresh  = (float) $params->get('shipping_free_threshold', 0);
+$thresholdBase = (int) $params->get('shipping_free_after_discount', 0) === 1 ? $afterDisc : $this->subtotal;
+$shipping    = (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThresh > 0 && $thresholdBase >= $freeThresh) ? 0.00 : $flatRate + max(0, $handlingFee));
 $total       = round($afterDisc + $tax + $shipping, 2);
 ?>
 <div class="com-sanctuaryshop-cart">

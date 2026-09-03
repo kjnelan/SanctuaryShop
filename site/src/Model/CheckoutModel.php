@@ -22,6 +22,10 @@ class CheckoutModel extends BaseDatabaseModel
         if (empty($cartItems)) {
             throw new \RuntimeException('Your cart is empty.');
         }
+        $user = Factory::getApplication()->getIdentity();
+        if (!$user->id && (int) $params->get('guest_checkout', 1) !== 1) {
+            throw new \RuntimeException('Please sign in before checking out.');
+        }
         if ((int) $params->get('require_terms', 1) === 1 && empty($data['accept_terms'])) {
             throw new \RuntimeException('Please accept the terms and conditions before placing your order.');
         }
@@ -41,6 +45,9 @@ class CheckoutModel extends BaseDatabaseModel
         if ($firstName === '' || $lastName === '' || !MailHelper::isEmailAddress($email)) {
             throw new \RuntimeException('Please provide a valid name and email address.');
         }
+        if ((int) $params->get('require_phone', 0) === 1 && trim((string) ($data['billing_phone'] ?? '')) === '') {
+            throw new \RuntimeException('Please provide a phone number.');
+        }
 
         foreach (['address_line_1', 'locality', 'postal_code'] as $field) {
             if (trim((string) (($data['billing'] ?? [])[$field] ?? '')) === '') {
@@ -55,18 +62,21 @@ class CheckoutModel extends BaseDatabaseModel
         $afterDiscount = max(0, $subtotal - $discount);
         $billingAddress = (array) ($data['billing'] ?? []);
         $shippingAddress = (array) ($data['shipping'] ?? $billingAddress);
-        $taxRate  = self::locationRate($params->get('tax_rules', ''), $billingAddress, (float) $params->get('tax_rate', 0)) / 100;
-        $tax      = round($afterDiscount * $taxRate, 2);
+        $taxRate  = self::locationRate($params->get('tax_rules', ''), $billingAddress, (float) $params->get('tax_rate', 0));
+        $tax      = (int) $params->get('prices_include_tax', 0) === 1 && $taxRate > 0
+            ? round($afterDiscount - ($afterDiscount / (1 + $taxRate / 100)), 2)
+            : round($afterDiscount * $taxRate / 100, 2);
 
         $flatRate      = (float) $params->get('shipping_flat_rate', 0);
         $freeThreshold = (float) $params->get('shipping_free_threshold', 0);
         $requiresShipping = (bool) array_filter($cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
         $shippingRate = self::locationRate($params->get('shipping_rules', ''), $shippingAddress, $flatRate);
-        $shipping      = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $shippingRate);
+        $shippingBase = $shippingRate + max(0, (float) $params->get('shipping_handling_fee', 0));
+        $thresholdBase = (int) $params->get('shipping_free_after_discount', 0) === 1 ? $afterDiscount : $subtotal;
+        $shipping      = !$requiresShipping || (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThreshold > 0 && $thresholdBase >= $freeThreshold) ? 0.00 : $shippingBase);
         $total         = round($afterDiscount + $tax + $shipping, 2);
 
         $db   = $this->getDatabase();
-        $user = Factory::getApplication()->getIdentity();
         $now  = Factory::getDate()->toSql();
 
         $billingName = $firstName . ' ' . $lastName;
@@ -89,7 +99,7 @@ class CheckoutModel extends BaseDatabaseModel
             'currency'         => strtoupper($params->get('currency', 'USD')),
             'billing_name'     => $billingName,
             'billing_email'    => $email,
-            'billing_address'  => json_encode($data['billing'] ?? []),
+            'billing_address'  => json_encode(array_merge((array) ($data['billing'] ?? []), ['phone' => trim((string) ($data['billing_phone'] ?? ''))])),
             'shipping_address' => json_encode($data['shipping'] ?? $data['billing'] ?? []),
             'payment_method'   => $provider,
             'created'          => $now,
@@ -654,6 +664,7 @@ class CheckoutModel extends BaseDatabaseModel
         try {
             $params   = ComponentHelper::getParams('com_sanctuaryshop');
             $notifyTo = $params->get('notify_email', '');
+            $storeEmail = $params->get('store_email', '');
             $shopName = $params->get('shop_name', 'SanctuaryShop');
             $config   = Factory::getApplication()->getConfig();
             $db       = $this->getDatabase();
@@ -704,14 +715,15 @@ class CheckoutModel extends BaseDatabaseModel
             if (!empty($notifyTo) && MailHelper::isEmailAddress($notifyTo)) {
                 $recipients[] = $notifyTo;
             }
-            if (MailHelper::isEmailAddress($order->billing_email)) {
+            if ((int) $params->get('send_customer_confirmation', 1) === 1 && MailHelper::isEmailAddress($order->billing_email)) {
                 $recipients[] = $order->billing_email;
             }
             $recipients = array_unique($recipients);
 
             $mailerFactory = Factory::getContainer()->get(MailerFactoryInterface::class);
             $mailer = $mailerFactory->createMailer();
-            $mailer->setSender([$config->get('mailfrom'), $shopName]);
+            $sender = MailHelper::isEmailAddress($storeEmail) ? $storeEmail : $config->get('mailfrom');
+            $mailer->setSender([$sender, $shopName]);
             $mailer->setSubject($subject);
             $mailer->isHtml(true);
             $mailer->setBody($htmlBody);
@@ -763,7 +775,7 @@ class CheckoutModel extends BaseDatabaseModel
             if (!$product) {
                 throw new \RuntimeException('A product in your cart is no longer available.');
             }
-            if (in_array($product->product_type, ['', 'physical'], true) && (int) $product->stock < $quantity) {
+            if ((int) ComponentHelper::getParams('com_sanctuaryshop')->get('allow_backorders', 0) !== 1 && in_array($product->product_type, ['', 'physical'], true) && (int) $product->stock < $quantity) {
                 throw new \RuntimeException('A product in your cart no longer has enough stock.');
             }
             $variantInfo = is_string($item->variant_info ?? null)
@@ -781,7 +793,7 @@ class CheckoutModel extends BaseDatabaseModel
                         ->where('id = ' . $optionId)
                         ->where('product_id = ' . $productId)
                 )->loadObject();
-                if (!$option || ((int) $option->stock >= 0 && (int) $option->stock < $quantity)) {
+                if (!$option || ((int) ComponentHelper::getParams('com_sanctuaryshop')->get('allow_backorders', 0) !== 1 && (int) $option->stock >= 0 && (int) $option->stock < $quantity)) {
                     throw new \RuntimeException('A selected product option no longer has enough stock.');
                 }
             }
