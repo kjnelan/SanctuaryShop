@@ -37,8 +37,8 @@ class SettingsController extends BaseController
         $params->set('tax_rules',         $input->getString('tax_rules', ''));
         $params->set('products_per_page', $input->getInt('products_per_page', 12));
         $params->set('notify_email',      $input->getString('notify_email', ''));
-        $params->set('send_customer_confirmation', $input->getInt('send_customer_confirmation', 1));
-        $params->set('guest_checkout',     $input->getInt('guest_checkout', 1));
+        $params->set('send_customer_confirmation', $input->getInt('send_customer_confirmation', 0));
+        $params->set('guest_checkout',     $input->getInt('guest_checkout', 0));
         $params->set('require_phone',      $input->getInt('require_phone', 0));
         $params->set('require_terms',     $input->getInt('require_terms', 0));
         $params->set('terms_url',         $input->getString('terms_url', ''));
@@ -62,7 +62,7 @@ class SettingsController extends BaseController
         $params->set('authorize_public_client_key',  $input->getString('authorize_public_client_key', ''));
 
         // Shipping
-        $params->set('shipping_enabled',        $input->getInt('shipping_enabled', 1));
+        $params->set('shipping_enabled',        $input->getInt('shipping_enabled', 0));
         $params->set('shipping_flat_rate',      $input->getFloat('shipping_flat_rate', 0));
         $params->set('shipping_handling_fee',   $input->getFloat('shipping_handling_fee', 0));
         $params->set('shipping_free_threshold', $input->getFloat('shipping_free_threshold', 0));
