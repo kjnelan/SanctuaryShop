@@ -22,6 +22,9 @@ class CheckoutModel extends BaseDatabaseModel
         if (empty($cartItems)) {
             throw new \RuntimeException('Your cart is empty.');
         }
+        if (array_filter($cartItems, static fn($item) => ($item->product_type ?? '') === 'subscription')) {
+            throw new \RuntimeException('Subscription products are not available until recurring billing is configured.');
+        }
 
         $firstName = trim((string) ($data['billing_firstname'] ?? ''));
         $lastName  = trim((string) ($data['billing_lastname'] ?? ''));
