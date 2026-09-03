@@ -41,7 +41,7 @@ class CartModel extends BaseDatabaseModel
         $ids = array_unique($ids);
 
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['id', 'title', 'price', 'sale_price', 'sku', 'image', 'product_type', 'subscription_plan_id', 'stock']))
+            ->select($db->quoteName(['id', 'title', 'price', 'sale_price', 'sku', 'image', 'product_type', 'subscription_plan_id', 'stock', 'weight']))
             ->from($db->quoteName('#__sanctuaryshop_products'))
             ->whereIn($db->quoteName('id'), $ids)
             ->where($db->quoteName('state') . ' = 1');
@@ -79,6 +79,7 @@ class CartModel extends BaseDatabaseModel
                 'image'       => $p->image,
                 'product_type' => $p->product_type,
                 'subscription_plan_id' => $p->subscription_plan_id,
+                'weight'     => max(0, (float) ($p->weight ?? 0)),
                 'unit_price'  => $unitPrice,
                 'quantity'    => $quantity,
                 'total_price' => round($unitPrice * $quantity, 2),

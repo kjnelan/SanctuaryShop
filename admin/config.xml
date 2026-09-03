@@ -70,6 +70,8 @@
         <field name="shipping_free_after_discount" type="radio" label="COM_SANCTUARYSHOP_CONFIG_FREE_AFTER_DISCOUNT" default="0" class="form-check form-check-inline">
             <option value="1">JYES</option><option value="0">JNO</option>
         </field>
+        <field name="shipping_methods" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_SHIPPING_METHODS" rows="5" class="form-control" hint="code|Name|base rate|per weight unit" />
+        <field name="shipping_weight_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_WEIGHT_RULES" rows="5" class="form-control" hint="Maximum weight=rate, one per line" />
         <field name="shipping_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_SHIPPING_RULES" rows="4" class="form-control" hint="One rule per line: US=5 or US-TX=8. More specific rules win." />
     </fieldset>
     <fieldset name="inventory" label="COM_SANCTUARYSHOP_CONFIG_INVENTORY_LABEL">

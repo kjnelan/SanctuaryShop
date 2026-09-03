@@ -8,7 +8,7 @@
     <creationDate>2026-06-09</creationDate>
     <copyright>Copyright (C) 2026 Sacred Wandering, Inc. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.9.1</version>
+    <version>1.9.3</version>
     <description>SanctuaryShop e-commerce suite — component and mini-cart module.</description>
     <files>
         <file type="component" id="com_sanctuaryshop">com_sanctuaryshop.zip</file>

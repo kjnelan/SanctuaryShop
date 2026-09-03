@@ -171,6 +171,14 @@ foreach ($this->cartItems as $item) {
                     <?php endforeach; ?>
                     </ul>
                 </div>
+                <?php if (!$allDigital && !empty($this->shippingMethods)) : ?>
+                <div class="card-body border-top border-bottom">
+                    <label class="form-label fw-semibold" for="shipping_method"><?php echo Text::_('COM_SANCTUARYSHOP_SHIPPING_METHOD'); ?></label>
+                    <select class="form-select" id="shipping_method" name="shipping_method">
+                        <?php foreach ($this->shippingMethods as $method) : ?><option value="<?php echo $this->escape($method['code']); ?>"><?php echo $this->escape($method['label']); ?></option><?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
                 <div class="card-footer">
                     <table class="table table-sm mb-0">
                         <tr>
@@ -232,6 +240,8 @@ foreach ($this->cartItems as $item) {
     const handlingFee = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_handling_fee', 0)); ?>;
     const shippingEnabled = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_enabled', 1) === 1); ?>;
     const freeAfterDiscount = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_free_after_discount', 0) === 1); ?>;
+    const shippingMethods = <?php echo json_encode($this->shippingMethods); ?>;
+    const totalWeight = <?php echo json_encode(array_sum(array_map(static fn($item) => max(0, (float) ($item->weight ?? 0)) * max(1, (int) ($item->quantity ?? 1)), $this->cartItems))); ?>;
     const pricesIncludeTax = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('prices_include_tax', 0) === 1); ?>;
     const requirePhone = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('require_phone', 0) === 1); ?>;
 
@@ -264,7 +274,8 @@ foreach ($this->cartItems as $item) {
         const same = document.getElementById('same_as_billing')?.checked ?? true;
         const shipCountry = same ? country : (document.getElementById('shipping_country')?.value || country);
         const shipState = same ? state : (document.getElementById('shipping_state_field')?.value || '');
-        const shippingRate = locationRate(shippingRules, shipCountry, shipState, flatShipping) + Math.max(0, handlingFee);
+        const selectedMethod = shippingMethods.find(method => method.code === (document.getElementById('shipping_method')?.value || '')) || shippingMethods[0] || {base: flatShipping, per_weight: 0};
+        const shippingRate = locationRate(shippingRules, shipCountry, shipState, Number(selectedMethod.base) || flatShipping) + (Number(selectedMethod.per_weight) || 0) * totalWeight + Math.max(0, handlingFee);
         const thresholdBase = freeAfterDiscount ? afterDiscount : subtotal;
         const shipping = !shippingEnabled || freeShippingThreshold > 0 && thresholdBase >= freeShippingThreshold ? 0 : shippingRate;
         const total = Math.round((afterDiscount + tax + shipping) * 100) / 100;
@@ -280,6 +291,7 @@ foreach ($this->cartItems as $item) {
         updateDisplayedTotals();
     });
     ['billing_country', 'billing_state_field', 'shipping_country', 'shipping_state_field'].forEach(id => document.getElementById(id)?.addEventListener('input', updateDisplayedTotals));
+    document.getElementById('shipping_method')?.addEventListener('change', updateDisplayedTotals);
     updateDisplayedTotals();
 
     function showMessage(text, type = 'danger') {
@@ -344,6 +356,7 @@ foreach ($this->cartItems as $item) {
                 'jform[billing_lastname]':  document.getElementById('billing_lastname').value,
                 'jform[billing_email]':     document.getElementById('billing_email').value,
                 'jform[billing_phone]':      document.getElementById('billing_phone').value,
+                'jform[shipping_method]':    document.getElementById('shipping_method')?.value || '',
                 'jform[billing][address_line_1]':   document.getElementById('billing_address1').value,
                 'jform[billing][address_line_2]':   document.getElementById('billing_address2').value,
                 'jform[billing][locality]':         document.getElementById('billing_city').value,

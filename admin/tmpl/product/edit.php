@@ -26,6 +26,7 @@ HTMLHelper::_('behavior.keepalive');
                     <?php echo $this->form->renderField('sale_price'); ?>
                     <?php echo $this->form->renderField('sku'); ?>
                     <?php echo $this->form->renderField('stock'); ?>
+                    <?php echo $this->form->renderField('weight'); ?>
                     <?php if ($this->item->product_type === 'subscription') : ?>
                         <?php echo $this->form->renderField('subscription_plan_id'); ?>
                     <?php endif; ?>

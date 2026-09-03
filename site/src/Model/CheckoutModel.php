@@ -70,10 +70,12 @@ class CheckoutModel extends BaseDatabaseModel
         $flatRate      = (float) $params->get('shipping_flat_rate', 0);
         $freeThreshold = (float) $params->get('shipping_free_threshold', 0);
         $requiresShipping = (bool) array_filter($cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
-        $shippingRate = self::locationRate($params->get('shipping_rules', ''), $shippingAddress, $flatRate);
-        $shippingBase = $shippingRate + max(0, (float) $params->get('shipping_handling_fee', 0));
+        $shippingData = self::calculateShipping($params, $shippingAddress, $cartItems, $subtotal, $discount, (string) ($data['shipping_method'] ?? ''));
+        $shipping = $shippingData['amount'];
         $thresholdBase = (int) $params->get('shipping_free_after_discount', 0) === 1 ? $afterDiscount : $subtotal;
-        $shipping      = !$requiresShipping || (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThreshold > 0 && $thresholdBase >= $freeThreshold) ? 0.00 : $shippingBase);
+        if ($requiresShipping && (int) $params->get('shipping_enabled', 1) === 1 && $freeThreshold > 0 && $thresholdBase >= $freeThreshold) {
+            $shipping = 0.00;
+        }
         $total         = round($afterDiscount + $tax + $shipping, 2);
 
         $db   = $this->getDatabase();
@@ -95,6 +97,7 @@ class CheckoutModel extends BaseDatabaseModel
             'coupon_code'      => $discount > 0 ? $cartModel->getCouponCode() : null,
             'tax'              => $tax,
             'shipping'         => $shipping,
+            'shipping_method'  => $shippingData['method']['code'],
             'total'            => $total,
             'currency'         => strtoupper($params->get('currency', 'USD')),
             'billing_name'     => $billingName,
@@ -861,5 +864,50 @@ class CheckoutModel extends BaseDatabaseModel
             }
         }
         return max(0, $fallback);
+    }
+
+    public static function shippingMethods(string $definition, float $fallback): array
+    {
+        $methods = [];
+        foreach (preg_split('/\R/', $definition) ?: [] as $line) {
+            $parts = array_map('trim', explode('|', trim($line)));
+            if (count($parts) < 3 || !preg_match('/^[a-z0-9_-]+$/i', $parts[0]) || $parts[1] === '' || !is_numeric($parts[2])) {
+                continue;
+            }
+            $methods[] = ['code' => $parts[0], 'label' => $parts[1], 'base' => max(0, (float) $parts[2]), 'per_weight' => isset($parts[3]) && is_numeric($parts[3]) ? max(0, (float) $parts[3]) : 0.0];
+        }
+        return $methods ?: [['code' => 'standard', 'label' => 'Standard Shipping', 'base' => max(0, $fallback), 'per_weight' => 0.0]];
+    }
+
+    public static function calculateShipping(object $params, array $address, array $items, float $subtotal, float $discount, string $selectedMethod = ''): array
+    {
+        $physical = array_filter($items, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
+        if (!$physical || (int) $params->get('shipping_enabled', 1) !== 1) {
+            $methods = self::shippingMethods((string) $params->get('shipping_methods', ''), (float) $params->get('shipping_flat_rate', 0));
+            return ['amount' => 0.0, 'method' => $methods[0]];
+        }
+        $methods = self::shippingMethods((string) $params->get('shipping_methods', ''), (float) $params->get('shipping_flat_rate', 0));
+        $method = $methods[0];
+        foreach ($methods as $candidate) {
+            if ($selectedMethod !== '' && hash_equals($candidate['code'], $selectedMethod)) {
+                $method = $candidate;
+                break;
+            }
+        }
+        $weight = 0.0;
+        foreach ($physical as $item) {
+            $weight += max(0, (float) ($item->weight ?? 0)) * max(1, (int) ($item->quantity ?? 1));
+        }
+        $weightRate = null;
+        foreach (preg_split('/\R/', (string) $params->get('shipping_weight_rules', '')) ?: [] as $line) {
+            $parts = array_map('trim', explode('=', trim($line), 2));
+            if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1]) && $weight <= (float) $parts[0]) {
+                $weightRate = max(0, (float) $parts[1]);
+                break;
+            }
+        }
+        $base = $weightRate ?? self::locationRate((string) $params->get('shipping_rules', ''), $address, $method['base']);
+        $amount = $base + ($weightRate === null ? $weight * $method['per_weight'] : 0) + max(0, (float) $params->get('shipping_handling_fee', 0));
+        return ['amount' => round(max(0, $amount), 2), 'method' => $method];
     }
 }

@@ -67,6 +67,8 @@ class SettingsController extends BaseController
         $params->set('shipping_handling_fee',   $input->getFloat('shipping_handling_fee', 0));
         $params->set('shipping_free_threshold', $input->getFloat('shipping_free_threshold', 0));
         $params->set('shipping_free_after_discount', $input->getInt('shipping_free_after_discount', 0));
+        $params->set('shipping_methods',        $input->getString('shipping_methods', ''));
+        $params->set('shipping_weight_rules',   $input->getString('shipping_weight_rules', ''));
         $params->set('shipping_rules',          $input->getString('shipping_rules', ''));
 
         // Inventory
