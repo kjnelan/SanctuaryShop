@@ -74,6 +74,7 @@ class Com_SanctuaryshopInstallerScript
                 CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_orders` (
                     `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `user_id`          INT UNSIGNED NOT NULL DEFAULT 0,
+                    `guest_token`      CHAR(64) NOT NULL DEFAULT '',
                     `status`           VARCHAR(50) NOT NULL DEFAULT 'pending',
                     `subtotal`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `discount`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
@@ -276,6 +277,18 @@ class Com_SanctuaryshopInstallerScript
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage(
                 'SanctuaryShop installer (webhooks): ' . $e->getMessage(), 'warning'
+            );
+        }
+
+        // v1.5 — guest order access token
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'guest_token'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `guest_token` CHAR(64) NOT NULL DEFAULT '' AFTER `user_id`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage(
+                'SanctuaryShop installer (guest access): ' . $e->getMessage(), 'warning'
             );
         }
     }

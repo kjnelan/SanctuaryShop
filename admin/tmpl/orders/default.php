@@ -27,6 +27,11 @@ $currencyMap = ['USD'=>'$','EUR'=>'€','GBP'=>'£','CAD'=>'CA$','AUD'=>'A$'];
                 <option value="refunded" <?php echo $this->state->get('filter.status') === 'refunded' ? 'selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_ORDER_STATUS_REFUNDED'); ?></option>
             </select>
         </div>
+        <div class="col-md-3 text-md-end mt-2 mt-md-0">
+            <a class="btn btn-outline-secondary" href="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=orders.export'); ?>">
+                <?php echo Text::_('COM_SANCTUARYSHOP_EXPORT_ORDERS'); ?>
+            </a>
+        </div>
     </div>
 
     <table class="table table-striped" id="orderList">

@@ -14,6 +14,8 @@ class CheckoutModel extends BaseDatabaseModel
     public function processOrder(array $data): int
     {
         $params    = ComponentHelper::getParams('com_sanctuaryshop');
+        $this->expireStaleOrders($params);
+        $this->enforceCheckoutRateLimit();
         $cartModel = new CartModel(['ignore_request' => true]);
         $cartItems = $cartModel->getItems();
 
@@ -44,7 +46,8 @@ class CheckoutModel extends BaseDatabaseModel
 
         $flatRate      = (float) $params->get('shipping_flat_rate', 0);
         $freeThreshold = (float) $params->get('shipping_free_threshold', 0);
-        $shipping      = ($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $flatRate;
+        $requiresShipping = (bool) array_filter($cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
+        $shipping      = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $flatRate);
         $total         = round($afterDiscount + $tax + $shipping, 2);
 
         $db   = $this->getDatabase();
@@ -55,6 +58,7 @@ class CheckoutModel extends BaseDatabaseModel
 
         $order = (object) [
             'user_id'          => (int) $user->id,
+            'guest_token'      => bin2hex(random_bytes(32)),
             'status'           => 'pending',
             'subtotal'         => $subtotal,
             'discount'         => $discount,
@@ -335,7 +339,7 @@ class CheckoutModel extends BaseDatabaseModel
         try {
             $db = $this->getDatabase();
             $query = $db->getQuery(true)
-                ->select('oi.product_id, oi.quantity')
+                ->select(['oi.product_id', 'oi.quantity', 'oi.variant_info'])
                 ->from($db->quoteName('#__sanctuaryshop_order_items', 'oi'))
                 ->leftJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = oi.product_id')
                 ->where('oi.order_id = ' . $orderId)
@@ -351,6 +355,24 @@ class CheckoutModel extends BaseDatabaseModel
                 $db->setQuery($update)->execute();
                 if ($db->getAffectedRows() !== 1) {
                     throw new \RuntimeException('Inventory changed while processing the order.');
+                }
+
+                $variantInfo = json_decode((string) ($item->variant_info ?? ''), true);
+                foreach ((array) $variantInfo as $selection) {
+                    $optionId = (int) ($selection['option_id'] ?? 0);
+                    if ($optionId <= 0) {
+                        continue;
+                    }
+                    $update = $db->getQuery(true)
+                        ->update($db->quoteName('#__sanctuaryshop_product_variant_options'))
+                        ->set($db->quoteName('stock') . ' = ' . $db->quoteName('stock') . ' - ' . (int) $item->quantity)
+                        ->where($db->quoteName('id') . ' = ' . $optionId)
+                        ->where($db->quoteName('product_id') . ' = ' . (int) $item->product_id)
+                        ->where('(' . $db->quoteName('stock') . ' < 0 OR ' . $db->quoteName('stock') . ' >= ' . (int) $item->quantity . ')');
+                    $db->setQuery($update)->execute();
+                    if ($db->getAffectedRows() !== 1) {
+                        throw new \RuntimeException('A selected product option is no longer available.');
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -501,10 +523,53 @@ class CheckoutModel extends BaseDatabaseModel
                 ? json_decode($item->variant_info, true)
                 : ($item->variant_info ?? []);
             foreach ((array) $variantInfo as $selection) {
-                if ((int) ($selection['stock'] ?? -1) >= 0 && (int) $selection['stock'] < $quantity) {
+                $optionId = (int) ($selection['option_id'] ?? 0);
+                if ($optionId <= 0) {
+                    throw new \RuntimeException('A selected product option is invalid.');
+                }
+                $option = $db->setQuery(
+                    $db->getQuery(true)
+                        ->select('stock')
+                        ->from($db->quoteName('#__sanctuaryshop_product_variant_options'))
+                        ->where('id = ' . $optionId)
+                        ->where('product_id = ' . $productId)
+                )->loadObject();
+                if (!$option || ((int) $option->stock >= 0 && (int) $option->stock < $quantity)) {
                     throw new \RuntimeException('A selected product option no longer has enough stock.');
                 }
             }
         }
+    }
+
+    private function expireStaleOrders(object $params): void
+    {
+        $minutes = max(15, (int) $params->get('pending_order_expiry_minutes', 60));
+        $cutoff = Factory::getDate('-' . $minutes . ' minutes')->toSql();
+        $db = $this->getDatabase();
+        $db->setQuery(
+            $db->getQuery(true)
+                ->update($db->quoteName('#__sanctuaryshop_orders'))
+                ->set('status = ' . $db->quote('cancelled'))
+                ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
+                ->where('status = ' . $db->quote('pending'))
+                ->where('created < ' . $db->quote($cutoff))
+        )->execute();
+    }
+
+    private function enforceCheckoutRateLimit(): void
+    {
+        $session = Factory::getApplication()->getSession();
+        $now = time();
+        $windowStart = (int) $session->get('sanctuaryshop.checkout_window', 0);
+        $attempts = (int) $session->get('sanctuaryshop.checkout_attempts', 0);
+        if ($windowStart < ($now - 600)) {
+            $windowStart = $now;
+            $attempts = 0;
+        }
+        if ($attempts >= 8) {
+            throw new \RuntimeException('Too many checkout attempts. Please wait a few minutes and try again.');
+        }
+        $session->set('sanctuaryshop.checkout_window', $windowStart);
+        $session->set('sanctuaryshop.checkout_attempts', $attempts + 1);
     }
 }

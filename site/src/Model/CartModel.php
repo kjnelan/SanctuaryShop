@@ -77,6 +77,7 @@ class CartModel extends BaseDatabaseModel
                 'title'       => $p->title,
                 'sku'         => $p->sku,
                 'image'       => $p->image,
+                'product_type' => $p->product_type,
                 'unit_price'  => $unitPrice,
                 'quantity'    => $quantity,
                 'total_price' => round($unitPrice * $quantity, 2),

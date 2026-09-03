@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_products` (
 CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_orders` (
     `id`               INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`          INT(11) UNSIGNED NOT NULL DEFAULT 0,
+    `guest_token`      CHAR(64) NOT NULL DEFAULT '',
     `status`           VARCHAR(50) NOT NULL DEFAULT 'pending',
     `subtotal`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
     `discount`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',

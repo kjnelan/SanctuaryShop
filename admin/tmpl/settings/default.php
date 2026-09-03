@@ -45,6 +45,10 @@ $p = $this->params;
                         <input type="email" class="form-control" id="notify_email" name="notify_email" value="<?php echo $this->escape($p->get('notify_email', '')); ?>">
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL_NOTE'); ?></div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="pending_order_expiry_minutes"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY'); ?></label>
+                        <input type="number" class="form-control" id="pending_order_expiry_minutes" name="pending_order_expiry_minutes" value="<?php echo (int) $p->get('pending_order_expiry_minutes', 60); ?>" min="15" max="10080">
+                    </div>
                 </div>
             </div>
         </div>

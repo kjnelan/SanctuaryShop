@@ -21,8 +21,10 @@ if (empty($this->cartItems)) : ?>
 // Check if all items are digital (no shipping needed)
 $allDigital = true;
 foreach ($this->cartItems as $item) {
-    // We don't have product_type on cart items yet — use a fallback
-    // It'll always show shipping; digital-only detection is a UX nicety
+    if (($item->product_type ?? 'physical') === 'physical') {
+        $allDigital = false;
+        break;
+    }
 }
 ?>
 
@@ -75,6 +77,7 @@ foreach ($this->cartItems as $item) {
                 </div>
             </div>
 
+            <?php if (!$allDigital) : ?>
             <!-- Shipping address -->
             <div class="card mb-4">
                 <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
@@ -120,6 +123,7 @@ foreach ($this->cartItems as $item) {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <!-- Payment -->
             <div class="card mb-4">
@@ -205,7 +209,7 @@ foreach ($this->cartItems as $item) {
     const msgBox = document.getElementById('payment-message');
 
     // Same-as-billing toggle
-    document.getElementById('same_as_billing').addEventListener('change', function () {
+    document.getElementById('same_as_billing')?.addEventListener('change', function () {
         document.getElementById('shipping-fields').style.display = this.checked ? 'none' : '';
     });
 
@@ -249,7 +253,7 @@ foreach ($this->cartItems as $item) {
         payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span><?php echo Text::_('COM_SANCTUARYSHOP_PROCESSING'); ?>…';
         msgBox.style.display = 'none';
 
-        const sameAsBilling = document.getElementById('same_as_billing').checked;
+        const sameAsBilling = document.getElementById('same_as_billing')?.checked ?? true;
 
         try {
             const billingData = new URLSearchParams({

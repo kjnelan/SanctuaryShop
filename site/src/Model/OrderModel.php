@@ -8,7 +8,7 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 
 class OrderModel extends BaseDatabaseModel
 {
-    public function getOrder(int $orderId): ?object
+    public function getOrder(int $orderId, string $guestToken = ''): ?object
     {
         $user = Factory::getApplication()->getIdentity();
         $db   = $this->getDatabase();
@@ -17,10 +17,14 @@ class OrderModel extends BaseDatabaseModel
             ->from($db->quoteName('#__sanctuaryshop_orders'))
             ->where($db->quoteName('id') . ' = ' . (int) $orderId);
 
-        if (!$user->id) {
+        if (!$user->id && !preg_match('/^[a-f0-9]{64}$/i', $guestToken)) {
             return null;
         }
-        $query->where($db->quoteName('user_id') . ' = ' . (int) $user->id);
+        if ($user->id) {
+            $query->where($db->quoteName('user_id') . ' = ' . (int) $user->id);
+        } else {
+            $query->where($db->quoteName('guest_token') . ' = ' . $db->quote($guestToken));
+        }
 
         return $db->setQuery($query)->loadObject();
     }

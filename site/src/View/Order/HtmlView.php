@@ -19,7 +19,8 @@ class HtmlView extends BaseHtmlView
         $app   = Factory::getApplication();
         $user  = $app->getIdentity();
 
-        if (!$user->id) {
+        $guestToken = $app->getInput()->getString('token', '');
+        if (!$user->id && !preg_match('/^[a-f0-9]{64}$/i', $guestToken)) {
             $app->enqueueMessage(Text::_('JGLOBAL_YOU_MUST_LOGIN_FIRST'), 'notice');
             $app->redirect(Route::_('index.php?option=com_users&view=login', false));
             return;
@@ -27,7 +28,7 @@ class HtmlView extends BaseHtmlView
 
         $orderId    = $app->getInput()->getInt('id');
         $model      = $this->getModel();
-        $this->order = $model->getOrder($orderId);
+        $this->order = $model->getOrder($orderId, $guestToken);
 
         if (!$this->order) {
             $app->enqueueMessage(Text::_('COM_SANCTUARYSHOP_ORDER_NOT_FOUND'), 'error');

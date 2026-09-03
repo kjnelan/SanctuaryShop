@@ -27,6 +27,7 @@ class SettingsController extends BaseController
         $params->set('tax_rate',          $input->getFloat('tax_rate', 0));
         $params->set('products_per_page', $input->getInt('products_per_page', 12));
         $params->set('notify_email',      $input->getString('notify_email', ''));
+        $params->set('pending_order_expiry_minutes', $input->getInt('pending_order_expiry_minutes', 60));
 
         // Payment
         $params->set('square_environment',           $input->getString('square_environment', 'sandbox'));

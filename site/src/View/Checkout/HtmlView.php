@@ -49,7 +49,8 @@ class HtmlView extends BaseHtmlView
 
             $flatRate          = (float) $params->get('shipping_flat_rate', 0);
             $freeThreshold     = (float) $params->get('shipping_free_threshold', 0);
-            $this->shipping    = ($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $flatRate;
+            $requiresShipping  = (bool) array_filter($this->cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
+            $this->shipping    = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $flatRate);
             $this->total       = round($afterDiscount + $this->tax + $this->shipping, 2);
 
             $sdkUrl = $this->squareEnvironment === 'production'

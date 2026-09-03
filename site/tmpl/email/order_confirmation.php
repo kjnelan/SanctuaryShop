@@ -24,6 +24,13 @@ defined('_JEXEC') or die;
             <p style="color:#aab;margin:8px 0 0;font-size:14px">Order Confirmation</p>
         </td></tr>
 
+        <tr><td style="padding:10px 30px">
+            <p style="margin:0;font-size:13px;color:#555">
+                View your order online:
+                <a href="<?php echo \Joomla\CMS\Router\Route::_('index.php?option=com_sanctuaryshop&view=order&id=' . (int) $orderId . '&token=' . urlencode($order->guest_token), true, 0, true); ?>">Order details and downloads</a>
+            </p>
+        </td></tr>
+
         <!-- Intro -->
         <tr><td style="padding:30px 30px 10px">
             <p style="margin:0 0 6px;font-size:16px">Thank you for your order!</p>

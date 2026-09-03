@@ -76,6 +76,9 @@ class ProductModel extends AdminModel
             if ($filename === '') {
                 continue;
             }
+            if (str_contains($filename, '..') || str_starts_with($filename, '/') || str_starts_with($filename, '\\')) {
+                throw new \RuntimeException('Download filenames must stay inside the configured download folder.');
+            }
             $label    = trim($data['label'] ?? '');
             $fileId   = (int) $id;
 
