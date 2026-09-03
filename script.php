@@ -337,5 +337,20 @@ class Com_SanctuaryshopInstallerScript
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage('SanctuaryShop installer (subscriptions): ' . $e->getMessage(), 'warning');
         }
+
+        // v1.9.2/1.9.3 — product weights and selected shipping method.
+        // Keep these guarded because an interrupted/retried Joomla update may replay SQL files.
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_products` LIKE 'weight'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_products` ADD COLUMN `weight` DECIMAL(10,3) NOT NULL DEFAULT '0.000' AFTER `stock`")->execute();
+            }
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'shipping_method'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `shipping_method` VARCHAR(100) NOT NULL DEFAULT 'standard' AFTER `shipping`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage('SanctuaryShop installer (shipping): ' . $e->getMessage(), 'warning');
+        }
     }
 }
