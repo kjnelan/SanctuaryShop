@@ -63,4 +63,53 @@ class CheckoutController extends BaseController
 
         $app->close();
     }
+
+    /** Dispatch the tokenized payment to the configured provider. */
+    public function payment(): void
+    {
+        Session::checkToken('get') or jexit('Invalid Token');
+        $app = Factory::getApplication();
+        $orderId = $this->input->getInt('order_id');
+        $provider = $this->input->getCmd('provider', 'square');
+        $model = $this->getModel('Checkout', 'Site');
+        try {
+            if ($provider === 'square') {
+                $paymentId = $model->chargeWithSquare($orderId, $this->input->getString('source_id'));
+            } elseif ($provider === 'stripe') {
+                $paymentId = $model->chargeWithStripe($orderId, $this->input->getString('payment_method'));
+            } elseif ($provider === 'authorize_net') {
+                $paymentId = $model->chargeWithAuthorizeNet($orderId, $this->input->getString('data_descriptor'), $this->input->getString('data_value'));
+            } else {
+                throw new \RuntimeException('The selected payment provider is not supported.');
+            }
+            $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => true, 'payment_id' => $paymentId]);
+        } catch (\Exception $e) {
+            http_response_code(422);
+            $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        $app->close();
+    }
+
+    public function stripeIntent(): void
+    {
+        Session::checkToken('get') or jexit('Invalid Token');
+        $app = Factory::getApplication();
+        try {
+            $intent = $this->getModel('Checkout', 'Site')->createStripeIntent($this->input->getInt('order_id'));
+            $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => true] + $intent);
+        } catch (\Exception $e) {
+            http_response_code(422); $app->setHeader('Content-Type', 'application/json', true);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        $app->close();
+    }
+
+    public function stripeComplete(): void
+    {
+        Session::checkToken('get') or jexit('Invalid Token'); $app=Factory::getApplication();
+        try{$id=$this->getModel('Checkout','Site')->completeStripePayment($this->input->getInt('order_id'),$this->input->getString('payment_intent'));$app->setHeader('Content-Type','application/json',true);echo json_encode(['success'=>true,'payment_id'=>$id]);}catch(\Exception $e){http_response_code(422);$app->setHeader('Content-Type','application/json',true);echo json_encode(['success'=>false,'error'=>$e->getMessage()]);}$app->close();
+    }
 }

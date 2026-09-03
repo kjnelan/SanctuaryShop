@@ -1,6 +1,6 @@
 -- v1.4.0: Square refund tracking and webhook event deduplication
 ALTER TABLE `#__sanctuaryshop_orders`
-    ADD COLUMN IF NOT EXISTS `square_refund_id` VARCHAR(255) NULL DEFAULT NULL AFTER `square_order_id`;
+    ADD COLUMN `square_refund_id` VARCHAR(255) NULL DEFAULT NULL AFTER `square_order_id`;
 
 CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_webhook_events` (
     `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,

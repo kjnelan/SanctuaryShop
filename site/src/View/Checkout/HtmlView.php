@@ -21,6 +21,11 @@ class HtmlView extends BaseHtmlView
     protected $squareAppId;
     protected $squareLocationId;
     protected $squareEnvironment;
+    protected $paymentProvider;
+    protected $stripePublishableKey;
+    protected $authorizePublicClientKey;
+    protected $authorizeApiLoginId;
+    protected $authorizeEnvironment;
     protected $orderId;
     public $orderDownloads = [];
 
@@ -30,6 +35,11 @@ class HtmlView extends BaseHtmlView
         $this->squareAppId       = $params->get('square_application_id', '');
         $this->squareLocationId  = $params->get('square_location_id', '');
         $this->squareEnvironment = $params->get('square_environment', 'sandbox');
+        $this->paymentProvider = $params->get('payment_provider', 'square');
+        $this->stripePublishableKey = $params->get('stripe_publishable_key', '');
+        $this->authorizePublicClientKey = $params->get('authorize_public_client_key', '');
+        $this->authorizeApiLoginId = $params->get('authorize_api_login_id', '');
+        $this->authorizeEnvironment = $params->get('authorize_environment', 'sandbox');
         $this->currency          = strtoupper($params->get('currency', 'USD'));
             $this->taxRate           = CheckoutModel::locationRate($params->get('tax_rules', ''), ['country' => 'US'], (float) $params->get('tax_rate', 0));
 
@@ -55,11 +65,13 @@ class HtmlView extends BaseHtmlView
             $this->shipping    = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $shippingRate);
             $this->total       = round($afterDiscount + $this->tax + $this->shipping, 2);
 
-            $sdkUrl = $this->squareEnvironment === 'production'
-                ? 'https://web.squarecdn.com/v1/square.js'
-                : 'https://sandbox.web.squarecdn.com/v1/square.js';
-
-            Factory::getDocument()->addScript($sdkUrl);
+            if ($this->paymentProvider === 'square') {
+                Factory::getDocument()->addScript($this->squareEnvironment === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js');
+            } elseif ($this->paymentProvider === 'stripe') {
+                Factory::getDocument()->addScript('https://js.stripe.com/v3/');
+            } elseif ($this->paymentProvider === 'authorize_net') {
+                Factory::getDocument()->addScript($this->authorizeEnvironment === 'production' ? 'https://js.authorize.net/v1/Accept.js' : 'https://jstest.authorize.net/v1/Accept.js');
+            }
         }
 
         parent::display($tpl);

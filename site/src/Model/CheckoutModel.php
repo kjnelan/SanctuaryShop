@@ -71,6 +71,11 @@ class CheckoutModel extends BaseDatabaseModel
 
         $billingName = $firstName . ' ' . $lastName;
 
+        $provider = (string) $params->get('payment_provider', 'square');
+        if (!in_array($provider, ['square', 'stripe', 'authorize_net'], true)) {
+            throw new \RuntimeException('The selected payment provider is not supported.');
+        }
+
         $order = (object) [
             'user_id'          => (int) $user->id,
             'guest_token'      => bin2hex(random_bytes(32)),
@@ -86,7 +91,7 @@ class CheckoutModel extends BaseDatabaseModel
             'billing_email'    => $email,
             'billing_address'  => json_encode($data['billing'] ?? []),
             'shipping_address' => json_encode($data['shipping'] ?? $data['billing'] ?? []),
-            'payment_method'   => 'square',
+            'payment_method'   => $provider,
             'created'          => $now,
             'modified'         => $now,
         ];
@@ -144,6 +149,9 @@ class CheckoutModel extends BaseDatabaseModel
                 return (string) $order->payment_id;
             }
             throw new \RuntimeException('Order not found or already processed.');
+        }
+        if (!in_array((string) $order->payment_method, ['square', 'square_subscription'], true)) {
+            throw new \RuntimeException('This order is assigned to a different payment provider.');
         }
 
         if ($this->getSubscriptionPlanForOrder($orderId)) {
@@ -210,6 +218,115 @@ class CheckoutModel extends BaseDatabaseModel
         $this->finalizePaidOrder($orderId, $paymentId, $squareOrderId, $order);
 
         return $paymentId;
+    }
+
+    /** Charge a Stripe PaymentMethod through a server-side PaymentIntent. */
+    public function chargeWithStripe(int $orderId, string $paymentMethodId): string
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $secret = trim((string) $params->get('stripe_secret_key', ''));
+        if ($secret === '' || !str_starts_with($secret, 'sk_')) {
+            throw new \RuntimeException('Stripe is not configured. Set the secret and publishable keys in SanctuaryShop settings.');
+        }
+        if ($paymentMethodId === '' || strlen($paymentMethodId) > 255) {
+            throw new \RuntimeException('Invalid Stripe payment method.');
+        }
+        $order = $this->getPendingOrder($orderId);
+        if ((string) $order->payment_method !== 'stripe') throw new \RuntimeException('This order is assigned to a different payment provider.');
+        if ($this->getSubscriptionPlanForOrder($orderId)) {
+            throw new \RuntimeException('Subscription products currently require Square payment processing.');
+        }
+        $body = http_build_query([
+            'amount' => (int) round((float) $order->total * 100),
+            'currency' => strtolower((string) $order->currency),
+            'payment_method' => $paymentMethodId,
+            'confirm' => 'true',
+            'off_session' => 'false',
+            'receipt_email' => $order->billing_email,
+            'description' => 'SanctuaryShop Order #' . $orderId,
+            'metadata[order_id]' => (string) $orderId,
+        ]);
+        $ch = curl_init('https://api.stripe.com/v1/payment_intents');
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $secret, 'Content-Type: application/x-www-form-urlencoded', 'Idempotency-Key: ss-' . hash('sha256', (string) $orderId)], CURLOPT_TIMEOUT => 30]);
+        $response = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $error = curl_error($ch); curl_close($ch);
+        $result = json_decode((string) $response, true) ?: [];
+        if ($error || $code < 200 || $code >= 300) {
+            throw new \RuntimeException($error ?: ($result['error']['message'] ?? 'Stripe payment failed.'));
+        }
+        $status = (string) ($result['status'] ?? '');
+        if ($status !== 'succeeded') {
+            throw new \RuntimeException($status === 'requires_action' ? 'Stripe requires additional customer authentication. Please try again.' : 'Stripe payment was not completed (' . $status . ').');
+        }
+        $paymentId = (string) ($result['id'] ?? '');
+        if ($paymentId === '') throw new \RuntimeException('Stripe returned no payment identifier.');
+        $this->finalizePaidOrder($orderId, $paymentId, null, $order);
+        return $paymentId;
+    }
+
+    /** Create a Stripe PaymentIntent for client-side confirmation. */
+    public function createStripeIntent(int $orderId): array
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $secret = trim((string) $params->get('stripe_secret_key', ''));
+        if ($secret === '' || !str_starts_with($secret, 'sk_')) throw new \RuntimeException('Stripe is not configured.');
+        $order = $this->getPendingOrder($orderId);
+        if ((string) $order->payment_method !== 'authorize_net') throw new \RuntimeException('This order is assigned to a different payment provider.');
+        if ($this->getSubscriptionPlanForOrder($orderId)) throw new \RuntimeException('Subscription products currently require Square payment processing.');
+        $body = http_build_query(['amount'=>(int)round((float)$order->total*100),'currency'=>strtolower((string)$order->currency),'receipt_email'=>$order->billing_email,'description'=>'SanctuaryShop Order #'.$orderId,'metadata[order_id]'=>$orderId,'automatic_payment_methods[enabled]'=>'true']);
+        $ch=curl_init('https://api.stripe.com/v1/payment_intents');curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$body,CURLOPT_HTTPHEADER=>['Authorization: Bearer '.$secret,'Content-Type: application/x-www-form-urlencoded','Idempotency-Key'=>'ss-intent-'.hash('sha256',(string)$orderId)],CURLOPT_TIMEOUT=>30]);$response=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);$error=curl_error($ch);curl_close($ch);$result=json_decode((string)$response,true)?:[];if($error||$code<200||$code>=300)throw new \RuntimeException($error?:($result['error']['message']??'Stripe could not create the payment.'));if(empty($result['id'])||empty($result['client_secret']))throw new \RuntimeException('Stripe returned an incomplete payment intent.');return ['client_secret'=>$result['client_secret'],'payment_intent'=>$result['id']];
+    }
+
+    /** Charge an Authorize.Net Accept.js opaque payment nonce. */
+    public function completeStripePayment(int $orderId, string $paymentIntentId): string
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop'); $secret = trim((string) $params->get('stripe_secret_key', ''));
+        if ($secret === '' || !str_starts_with($secret, 'sk_') || !preg_match('/^pi_[A-Za-z0-9_]+$/', $paymentIntentId)) throw new \RuntimeException('Invalid Stripe payment confirmation.');
+        $order = $this->getPendingOrder($orderId); $ch = curl_init('https://api.stripe.com/v1/payment_intents/' . rawurlencode($paymentIntentId));
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_HTTPHEADER=>['Authorization: Bearer '.$secret], CURLOPT_TIMEOUT=>30]); $response=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);$error=curl_error($ch);curl_close($ch);$result=json_decode((string)$response,true)?:[];
+        if($error||$code<200||$code>=300||($result['status']??'')!=='succeeded') throw new \RuntimeException($error?:'Stripe payment has not completed.');
+        if((int)($result['amount']??-1)!==(int)round((float)$order->total*100)||strtolower((string)($result['currency']??''))!==strtolower((string)$order->currency)) throw new \RuntimeException('Stripe payment amount does not match the order.');
+        $this->finalizePaidOrder($orderId, $paymentIntentId, null, $order); return $paymentIntentId;
+    }
+
+    /** Charge an Authorize.Net Accept.js opaque payment nonce. */
+    public function chargeWithAuthorizeNet(int $orderId, string $dataDescriptor, string $dataValue): string
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $login = trim((string) $params->get('authorize_api_login_id', ''));
+        $key = trim((string) $params->get('authorize_transaction_key', ''));
+        if ($login === '' || $key === '') throw new \RuntimeException('Authorize.Net is not configured.');
+        if ($dataDescriptor === '' || $dataValue === '') throw new \RuntimeException('Invalid Authorize.Net payment nonce.');
+        $order = $this->getPendingOrder($orderId);
+        if ((string) $order->payment_method !== 'stripe') throw new \RuntimeException('This order is assigned to a different payment provider.');
+        if ($this->getSubscriptionPlanForOrder($orderId)) {
+            throw new \RuntimeException('Subscription products currently require Square payment processing.');
+        }
+        $payload = ['createTransactionRequest' => ['merchantAuthentication' => ['name' => $login, 'transactionKey' => $key], 'transactionRequest' => ['transactionType' => 'authCaptureTransaction', 'amount' => number_format((float) $order->total, 2, '.', ''), 'order' => ['invoiceNumber' => (string) $orderId, 'description' => 'SanctuaryShop Order #' . $orderId], 'payment' => ['opaqueData' => ['dataDescriptor' => $dataDescriptor, 'dataValue' => $dataValue]], 'customer' => ['email' => $order->billing_email]]]];
+        $endpoint = $params->get('authorize_environment', 'sandbox') === 'production' ? 'https://api.authorize.net/xml/v1/request.api' : 'https://apitest.authorize.net/xml/v1/request.api';
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload), CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'], CURLOPT_TIMEOUT => 30]);
+        $response = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); $error = curl_error($ch); curl_close($ch);
+        $result = json_decode((string) $response, true) ?: [];
+        $transaction = $result['transactionResponse'] ?? [];
+        if ($error || $code < 200 || $code >= 300 || (string) ($transaction['responseCode'] ?? '') !== '1') {
+            throw new \RuntimeException($error ?: ($transaction['errors'][0]['errorText'] ?? $result['messages']['message'][0]['text'] ?? 'Authorize.Net payment failed.'));
+        }
+        $paymentId = (string) ($transaction['transId'] ?? '');
+        if ($paymentId === '') throw new \RuntimeException('Authorize.Net returned no transaction identifier.');
+        $this->finalizePaidOrder($orderId, $paymentId, null, $order);
+        return $paymentId;
+    }
+
+    private function getPendingOrder(int $orderId): object
+    {
+        $db = $this->getDatabase();
+        $order = $db->setQuery($db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . (int) $orderId))->loadObject();
+        if (!$order || $order->status !== 'pending') throw new \RuntimeException('Order not found or already processed.');
+        $pending = (int) Factory::getApplication()->getSession()->get('sanctuaryshop.pending_order_id', 0);
+        $user = Factory::getApplication()->getIdentity();
+        if ($pending !== $orderId && ((int) $user->id === 0 || (int) $order->user_id !== (int) $user->id)) throw new \RuntimeException('This checkout session is no longer valid.');
+        $this->validateInventory($this->getOrderItemsForCheckout($orderId));
+        return $order;
     }
 
     public function refundWithSquare(int $orderId, ?float $requestedAmount = null): string

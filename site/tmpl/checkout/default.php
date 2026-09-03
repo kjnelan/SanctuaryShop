@@ -203,13 +203,19 @@ foreach ($this->cartItems as $item) {
 </div>
 
 <script>
-(async function initSquare() {
+(async function initPayment() {
+    const provider   = <?php echo json_encode($this->paymentProvider); ?>;
     const appId      = <?php echo json_encode($this->squareAppId); ?>;
     const locationId = <?php echo json_encode($this->squareLocationId); ?>;
+    const stripeKey  = <?php echo json_encode($this->stripePublishableKey); ?>;
+    const authKey    = <?php echo json_encode($this->authorizePublicClientKey); ?>;
+    const authLogin  = <?php echo json_encode($this->authorizeApiLoginId); ?>;
     const token      = <?php echo json_encode(Session::getFormToken()); ?>;
 
     const processUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.process&format=raw', false)); ?>;
-    const payUrl     = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.squarePayment&format=raw', false)); ?>;
+    const payUrl     = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.payment&format=raw', false)); ?>;
+    const stripeIntentUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.stripeIntent&format=raw', false)); ?>;
+    const stripeCompleteUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.stripeComplete&format=raw', false)); ?>;
     const confirmUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&view=checkout&layout=confirmation', false)); ?>;
     const taxRules = <?php echo json_encode((string) ComponentHelper::getParams('com_sanctuaryshop')->get('tax_rules', '')); ?>;
     const shippingRules = <?php echo json_encode((string) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_rules', '')); ?>;
@@ -270,16 +276,28 @@ foreach ($this->cartItems as $item) {
         msgBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    if (!window.Square || !appId || !locationId) {
+    if (provider === 'square' && (!window.Square || !appId || !locationId)) {
         showMessage('<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_NOT_CONFIGURED'); ?>', 'warning');
         return;
     }
+    if (provider === 'stripe' && (!window.Stripe || !stripeKey)) {
+        showMessage('<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_NOT_CONFIGURED'); ?>', 'warning'); return;
+    }
+    if (provider === 'authorize_net' && (!window.Accept || !authKey || !authLogin)) {
+        showMessage('<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_NOT_CONFIGURED'); ?>', 'warning'); return;
+    }
 
-    let card;
+    let card, stripe;
     try {
-        const payments = Square.payments(appId, locationId);
-        card = await payments.card();
-        await card.attach('#card-container');
+        if (provider === 'square') {
+            const payments = Square.payments(appId, locationId);
+            card = await payments.card(); await card.attach('#card-container');
+        } else if (provider === 'stripe') {
+            stripe = Stripe(stripeKey);
+            const elements = stripe.elements(); card = elements.create('card'); card.mount('#card-container');
+        } else {
+            document.getElementById('card-container').innerHTML = '<div class="row g-2"><div class="col-12"><label class="form-label">Card number</label><input id="anet-card" class="form-control" inputmode="numeric" autocomplete="cc-number" required></div><div class="col-4"><label class="form-label">Month</label><input id="anet-month" class="form-control" placeholder="MM" inputmode="numeric" autocomplete="cc-exp-month" required></div><div class="col-4"><label class="form-label">Year</label><input id="anet-year" class="form-control" placeholder="YYYY" inputmode="numeric" autocomplete="cc-exp-year" required></div><div class="col-4"><label class="form-label">CVV</label><input id="anet-cvv" class="form-control" inputmode="numeric" autocomplete="cc-csc" required></div></div>';
+        }
         payBtn.disabled = false;
     } catch (e) {
         showMessage('<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_LOAD_ERROR'); ?>: ' + e.message);
@@ -337,16 +355,27 @@ foreach ($this->cartItems as $item) {
             const orderData = await orderResp.json();
             if (!orderData.success) throw new Error(orderData.error || '<?php echo Text::_('COM_SANCTUARYSHOP_ORDER_CREATE_ERROR'); ?>');
 
-            const tokenResult = await card.tokenize();
-            if (tokenResult.status !== 'OK') {
-                throw new Error(tokenResult.errors?.map(e => e.message).join(', ') || '<?php echo Text::_('COM_SANCTUARYSHOP_CARD_TOKEN_ERROR'); ?>');
+            const paymentParams = new URLSearchParams({order_id: orderData.order_id, provider, [token]: '1'});
+            if (provider === 'square') {
+                const tokenResult = await card.tokenize();
+                if (tokenResult.status !== 'OK') throw new Error(tokenResult.errors?.map(e => e.message).join(', ') || '<?php echo Text::_('COM_SANCTUARYSHOP_CARD_TOKEN_ERROR'); ?>');
+                paymentParams.set('source_id', tokenResult.token);
+            } else if (provider === 'stripe') {
+                const intentResp = await fetch(stripeIntentUrl + '&order_id=' + orderData.order_id + '&' + token + '=1');
+                const intentData = await intentResp.json();
+                if (!intentData.success) throw new Error(intentData.error || '<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_FAILED'); ?>');
+                const result = await stripe.confirmCardPayment(intentData.client_secret, {payment_method: {card, billing_details: {name: document.getElementById('billing_firstname').value + ' ' + document.getElementById('billing_lastname').value, email: document.getElementById('billing_email').value}}});
+                if (result.error) throw new Error(result.error.message);
+                const completeResp = await fetch(stripeCompleteUrl + '&order_id=' + orderData.order_id + '&payment_intent=' + encodeURIComponent(result.paymentIntent.id) + '&' + token + '=1');
+                const completeData = await completeResp.json();
+                if (!completeData.success) throw new Error(completeData.error || '<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_FAILED'); ?>');
+                window.location.href = confirmUrl + '&order_id=' + orderData.order_id;
+                return;
+            } else {
+                const nonce = await new Promise((resolve, reject) => Accept.dispatchData({authData: {clientKey: authKey, apiLoginID: authLogin}, cardData: {cardNumber: document.getElementById('anet-card').value, month: document.getElementById('anet-month').value, year: document.getElementById('anet-year').value, cardCode: document.getElementById('anet-cvv').value, zip: document.getElementById('billing_zip').value}}, response => response.messages?.resultCode === 'Ok' ? resolve(response.opaqueData) : reject(new Error(response.messages?.message?.[0]?.text || 'Authorize.Net card tokenization failed.'))));
+                paymentParams.set('data_descriptor', nonce.dataDescriptor); paymentParams.set('data_value', nonce.dataValue);
             }
-
-            const payResp = await fetch(
-                payUrl + '&order_id=' + orderData.order_id +
-                '&source_id=' + encodeURIComponent(tokenResult.token) +
-                '&' + token + '=1'
-            );
+            const payResp = await fetch(payUrl + '&' + paymentParams.toString());
             const payData = await payResp.json();
             if (!payData.success) throw new Error(payData.error || '<?php echo Text::_('COM_SANCTUARYSHOP_PAYMENT_FAILED'); ?>');
 

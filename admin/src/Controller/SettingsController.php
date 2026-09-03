@@ -28,18 +28,26 @@ class SettingsController extends BaseController
         $params->set('tax_rules',         $input->getString('tax_rules', ''));
         $params->set('products_per_page', $input->getInt('products_per_page', 12));
         $params->set('notify_email',      $input->getString('notify_email', ''));
-        $params->set('require_terms',     $input->getInt('require_terms', 1));
+        $params->set('require_terms',     $input->getInt('require_terms', 0));
         $params->set('terms_url',         $input->getString('terms_url', ''));
         $params->set('pending_order_expiry_minutes', $input->getInt('pending_order_expiry_minutes', 60));
         $params->set('low_stock_threshold', $input->getInt('low_stock_threshold', 5));
 
         // Payment
+        $params->set('payment_provider',             $input->getCmd('payment_provider', 'square'));
         $params->set('square_environment',           $input->getString('square_environment', 'sandbox'));
         $params->set('square_application_id',        $input->getString('square_application_id', ''));
         $params->set('square_access_token',          $input->getString('square_access_token', ''));
         $params->set('square_location_id',           $input->getString('square_location_id', ''));
         $params->set('square_webhook_signature_key', $input->getString('square_webhook_signature_key', ''));
         $params->set('square_webhook_url',             $input->getString('square_webhook_url', ''));
+        $params->set('stripe_publishable_key',      $input->getString('stripe_publishable_key', ''));
+        $params->set('stripe_secret_key',            $input->getString('stripe_secret_key', ''));
+        $params->set('stripe_webhook_secret',        $input->getString('stripe_webhook_secret', ''));
+        $params->set('authorize_environment',        $input->getCmd('authorize_environment', 'sandbox'));
+        $params->set('authorize_api_login_id',       $input->getString('authorize_api_login_id', ''));
+        $params->set('authorize_transaction_key',    $input->getString('authorize_transaction_key', ''));
+        $params->set('authorize_public_client_key',  $input->getString('authorize_public_client_key', ''));
 
         // Shipping
         $params->set('shipping_flat_rate',      $input->getFloat('shipping_flat_rate', 0));

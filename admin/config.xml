@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
     <fieldset name="square" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_LABEL">
+        <field name="payment_provider" type="list" label="COM_SANCTUARYSHOP_CONFIG_PAYMENT_PROVIDER" default="square" class="form-select">
+            <option value="square">COM_SANCTUARYSHOP_CONFIG_PROVIDER_SQUARE</option>
+            <option value="stripe">COM_SANCTUARYSHOP_CONFIG_PROVIDER_STRIPE</option>
+            <option value="authorize_net">COM_SANCTUARYSHOP_CONFIG_PROVIDER_AUTHORIZE_NET</option>
+        </field>
         <field name="square_environment" type="list" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV" default="sandbox" class="form-select">
             <option value="sandbox">COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_SANDBOX</option>
             <option value="production">COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_PRODUCTION</option>
@@ -10,8 +15,19 @@
         <field name="square_location_id" type="text" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_LOCATION_ID" class="form-control" />
         <field name="square_webhook_signature_key" type="password" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_KEY" class="form-control" />
         <field name="square_webhook_url" type="url" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_URL" class="form-control" hint="https://example.org/index.php?option=com_sanctuaryshop&amp;task=webhook.square" />
+        <field name="stripe_publishable_key" type="text" label="COM_SANCTUARYSHOP_CONFIG_STRIPE_PUBLISHABLE_KEY" class="form-control" />
+        <field name="stripe_secret_key" type="password" label="COM_SANCTUARYSHOP_CONFIG_STRIPE_SECRET_KEY" class="form-control" />
+        <field name="stripe_webhook_secret" type="password" label="COM_SANCTUARYSHOP_CONFIG_STRIPE_WEBHOOK_SECRET" class="form-control" />
+        <field name="authorize_environment" type="list" label="COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_ENV" default="sandbox" class="form-select">
+            <option value="sandbox">COM_SANCTUARYSHOP_CONFIG_ENV_SANDBOX</option>
+            <option value="production">COM_SANCTUARYSHOP_CONFIG_ENV_PRODUCTION</option>
+        </field>
+        <field name="authorize_api_login_id" type="text" label="COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_LOGIN" class="form-control" />
+        <field name="authorize_transaction_key" type="password" label="COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_TRANSACTION_KEY" class="form-control" />
+        <field name="authorize_public_client_key" type="text" label="COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_PUBLIC_KEY" class="form-control" />
     </fieldset>
     <fieldset name="shop" label="COM_SANCTUARYSHOP_CONFIG_SHOP_LABEL">
+        <field name="shop_name" type="text" label="COM_SANCTUARYSHOP_CONFIG_SHOP_NAME" class="form-control" />
         <field name="currency" type="text" label="COM_SANCTUARYSHOP_CONFIG_CURRENCY" default="USD" maxlength="3" class="form-control" />
         <field name="tax_rate" type="number" label="COM_SANCTUARYSHOP_CONFIG_TAX_RATE" default="0" min="0" max="100" step="0.01" class="form-control" hint="Percentage, e.g. 8.5" />
         <field name="tax_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_TAX_RULES" rows="4" class="form-control" hint="One rule per line: US=0 or US-TX=8.25. More specific rules win." />
