@@ -242,6 +242,7 @@ foreach ($this->cartItems as $item) {
     const freeAfterDiscount = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_free_after_discount', 0) === 1); ?>;
     const shippingMethods = <?php echo json_encode($this->shippingMethods); ?>;
     const totalWeight = <?php echo json_encode(array_sum(array_map(static fn($item) => max(0, (float) ($item->weight ?? 0)) * max(1, (int) ($item->quantity ?? 1)), $this->cartItems))); ?>;
+    const shippingWeightRules = <?php echo json_encode((string) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_weight_rules', '')); ?>;
     const pricesIncludeTax = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('prices_include_tax', 0) === 1); ?>;
     const requirePhone = <?php echo json_encode((int) ComponentHelper::getParams('com_sanctuaryshop')->get('require_phone', 0) === 1); ?>;
 
@@ -263,6 +264,14 @@ foreach ($this->cartItems as $item) {
         return Math.max(0, fallback);
     }
 
+    function weightRate(rules, weight) {
+        for (const line of (rules || '').split(/\r?\n/)) {
+            const parts = line.split('=');
+            if (parts.length === 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1])) && weight <= parseFloat(parts[0])) return Math.max(0, parseFloat(parts[1]));
+        }
+        return null;
+    }
+
     function updateDisplayedTotals() {
         const country = document.getElementById('billing_country')?.value || 'US';
         const state = document.getElementById('billing_state_field')?.value || '';
@@ -275,7 +284,8 @@ foreach ($this->cartItems as $item) {
         const shipCountry = same ? country : (document.getElementById('shipping_country')?.value || country);
         const shipState = same ? state : (document.getElementById('shipping_state_field')?.value || '');
         const selectedMethod = shippingMethods.find(method => method.code === (document.getElementById('shipping_method')?.value || '')) || shippingMethods[0] || {base: flatShipping, per_weight: 0};
-        const shippingRate = locationRate(shippingRules, shipCountry, shipState, Number(selectedMethod.base) || flatShipping) + (Number(selectedMethod.per_weight) || 0) * totalWeight + Math.max(0, handlingFee);
+        const tierRate = weightRate(shippingWeightRules, totalWeight);
+        const shippingRate = (tierRate === null ? locationRate(shippingRules, shipCountry, shipState, Number(selectedMethod.base) || flatShipping) + (Number(selectedMethod.per_weight) || 0) * totalWeight : tierRate) + Math.max(0, handlingFee);
         const thresholdBase = freeAfterDiscount ? afterDiscount : subtotal;
         const shipping = !shippingEnabled || freeShippingThreshold > 0 && thresholdBase >= freeShippingThreshold ? 0 : shippingRate;
         const total = Math.round((afterDiscount + tax + shipping) * 100) / 100;

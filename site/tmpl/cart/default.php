@@ -20,9 +20,15 @@ $handlingFee = (float) $params->get('shipping_handling_fee', 0);
 $shippingMethods = \SanctuaryShop\Component\Sanctuaryshop\Site\Model\CheckoutModel::shippingMethods((string) $params->get('shipping_methods', ''), $flatRate);
 $defaultMethod = $shippingMethods[0];
 $totalWeight = array_sum(array_map(static fn($item) => max(0, (float) ($item->weight ?? 0)) * max(1, (int) ($item->quantity ?? 1)), $this->cartItems));
+$weightRate = null;
+foreach (preg_split('/\R/', (string) $params->get('shipping_weight_rules', '')) ?: [] as $line) {
+    $parts = array_map('trim', explode('=', trim($line), 2));
+    if (count($parts) === 2 && is_numeric($parts[0]) && is_numeric($parts[1]) && $totalWeight <= (float) $parts[0]) { $weightRate = max(0, (float) $parts[1]); break; }
+}
 $freeThresh  = (float) $params->get('shipping_free_threshold', 0);
 $thresholdBase = (int) $params->get('shipping_free_after_discount', 0) === 1 ? $afterDisc : $this->subtotal;
-$shipping    = (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThresh > 0 && $thresholdBase >= $freeThresh) ? 0.00 : $flatRate + ($defaultMethod['per_weight'] * $totalWeight) + max(0, $handlingFee));
+$shippingBase = $weightRate === null ? $flatRate + ($defaultMethod['per_weight'] * $totalWeight) : $weightRate;
+$shipping    = (int) $params->get('shipping_enabled', 1) !== 1 ? 0.00 : (($freeThresh > 0 && $thresholdBase >= $freeThresh) ? 0.00 : $shippingBase + max(0, $handlingFee));
 $total       = round($afterDisc + $tax + $shipping, 2);
 ?>
 <div class="com-sanctuaryshop-cart">
