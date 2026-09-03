@@ -77,9 +77,12 @@ class HtmlView extends BaseHtmlView
                 ->leftJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = t.product_id')
                 ->leftJoin($db->quoteName('#__sanctuaryshop_product_files', 'pf') . ' ON pf.id = t.file_id')
                 ->where('t.order_id = ' . $orderId)
-                ->where('t.revoked = 0');
+                ->where('t.revoked = 0')
+                ->where('t.order_id IN (SELECT id FROM #__sanctuaryshop_orders WHERE status = ' . $db->quote('completed') . ')');
             if ($user->id) {
                 $query->where('t.user_id = ' . (int) $user->id);
+            } elseif ((int) Factory::getApplication()->getSession()->get('sanctuaryshop.confirmation_order_id', 0) !== $orderId) {
+                return [];
             }
             return $db->setQuery($query)->loadObjectList() ?: [];
         } catch (\Exception $e) {

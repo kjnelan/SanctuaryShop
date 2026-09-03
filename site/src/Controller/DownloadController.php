@@ -66,11 +66,11 @@ class DownloadController extends BaseController
         }
 
         $filename = ltrim($row->filename, '/\\');
-        $fullPath = $basePath . DIRECTORY_SEPARATOR . $filename;
-        $fullPath = realpath($fullPath);
+        $baseRealPath = realpath($basePath);
+        $fullPath = realpath($basePath . DIRECTORY_SEPARATOR . $filename);
 
         // Prevent path traversal
-        if (!$fullPath || strpos($fullPath, realpath($basePath)) !== 0 || !is_file($fullPath)) {
+        if (!$baseRealPath || !$fullPath || ($fullPath !== $baseRealPath && strpos($fullPath, $baseRealPath . DIRECTORY_SEPARATOR) !== 0) || !is_file($fullPath)) {
             $app->enqueueMessage('File not found.', 'error');
             $app->redirect('/');
             return;
@@ -81,8 +81,14 @@ class DownloadController extends BaseController
             ->update($db->quoteName('#__sanctuaryshop_download_tokens'))
             ->set($db->quoteName('download_count') . ' = ' . $db->quoteName('download_count') . ' + 1')
             ->set($db->quoteName('last_used') . ' = ' . $db->quote(Factory::getDate()->toSql()))
-            ->where($db->quoteName('id') . ' = ' . (int) $row->id);
+            ->where($db->quoteName('id') . ' = ' . (int) $row->id)
+            ->where($db->quoteName('download_count') . ' < ' . (int) $row->max_downloads);
         $db->setQuery($upd)->execute();
+        if ($db->getAffectedRows() !== 1) {
+            $app->enqueueMessage('Maximum download limit reached for this link.', 'error');
+            $app->redirect('/');
+            return;
+        }
 
         $this->streamFile($fullPath, $row->label ?: basename($filename));
     }
@@ -99,6 +105,11 @@ class DownloadController extends BaseController
             if (preg_match('/bytes=(\d*)-(\d*)/', $_SERVER['HTTP_RANGE'], $m)) {
                 $start   = $m[1] !== '' ? (int) $m[1] : 0;
                 $end     = $m[2] !== '' ? (int) $m[2] : $size - 1;
+                if ($start > $end || $start >= $size || $end >= $size) {
+                    http_response_code(416);
+                    header('Content-Range: bytes */' . $size);
+                    return;
+                }
                 $partial = true;
             }
         }
@@ -113,6 +124,7 @@ class DownloadController extends BaseController
         }
 
         header('Content-Type: ' . $mime);
+        $downloadName = preg_replace('/[^A-Za-z0-9._ -]/', '_', basename($downloadName)) ?: 'download';
         header('Content-Disposition: attachment; filename="' . addslashes($downloadName) . '"');
         header('Content-Length: ' . $length);
         header('Accept-Ranges: bytes');

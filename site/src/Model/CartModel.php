@@ -41,7 +41,7 @@ class CartModel extends BaseDatabaseModel
         $ids = array_unique($ids);
 
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['id', 'title', 'price', 'sale_price', 'sku', 'image']))
+            ->select($db->quoteName(['id', 'title', 'price', 'sale_price', 'sku', 'image', 'product_type', 'stock']))
             ->from($db->quoteName('#__sanctuaryshop_products'))
             ->whereIn($db->quoteName('id'), $ids)
             ->where($db->quoteName('state') . ' = 1');
@@ -59,14 +59,17 @@ class CartModel extends BaseDatabaseModel
             $p = $products[$productId];
             $unitPrice = (float) ($p->sale_price ?: $p->price);
 
-            // Apply price modifier from variant
             if (!empty($variantInfo)) {
-                $modifier = 0;
-                foreach ($variantInfo as $sel) {
-                    $modifier += (float) ($sel['price_modifier'] ?? 0);
+                // Never trust prices or labels stored in the browser session.
+                $variantInfo = $this->canonicalizeVariantInfo($productId, $variantInfo);
+                if ($variantInfo === false || $variantInfo === null) {
+                    continue;
                 }
+                $modifier = array_sum(array_map(static fn($sel) => (float) $sel['price_modifier'], $variantInfo));
                 $unitPrice += $modifier;
             }
+
+            $unitPrice = round($unitPrice, 2);
 
             $items[] = (object) [
                 'cart_key'    => $cartKey,
@@ -76,7 +79,7 @@ class CartModel extends BaseDatabaseModel
                 'image'       => $p->image,
                 'unit_price'  => $unitPrice,
                 'quantity'    => $quantity,
-                'total_price' => $unitPrice * $quantity,
+                'total_price' => round($unitPrice * $quantity, 2),
                 'variant_info' => $variantInfo,
             ];
         }
@@ -91,12 +94,30 @@ class CartModel extends BaseDatabaseModel
 
     public function getCount(): int
     {
-        $cart = $this->getSessionCart();
-        return array_sum(array_column($cart, 'quantity'));
+        return array_sum(array_map(static fn($item) => (int) $item->quantity, $this->getItems()));
     }
 
     public function addItem(int $productId, int $quantity, ?array $variantInfo = null): void
     {
+        $quantity = min(999, max(1, $quantity));
+        $db = $this->getDatabase();
+        $product = $db->setQuery(
+            $db->getQuery(true)
+                ->select(['id', 'state'])
+                ->from($db->quoteName('#__sanctuaryshop_products'))
+                ->where('id = ' . $productId)
+        )->loadObject();
+        if (!$product || !(int) $product->state) {
+            throw new \RuntimeException('Product is not available.');
+        }
+
+        $variantInfo = !empty($variantInfo)
+            ? $this->canonicalizeVariantInfo($productId, $variantInfo)
+            : null;
+        if ($variantInfo === false) {
+            throw new \RuntimeException('Invalid product option.');
+        }
+
         $cart    = $this->getSessionCart();
         $cartKey = $this->makeCartKey($productId, $variantInfo);
 
@@ -117,7 +138,7 @@ class CartModel extends BaseDatabaseModel
         $cart    = $this->getSessionCart();
         $newCart = [];
         foreach ($quantities as $cartKey => $qty) {
-            $qty = (int) $qty;
+            $qty = min(999, max(0, (int) $qty));
             if ($qty > 0 && isset($cart[$cartKey])) {
                 $newCart[$cartKey] = $cart[$cartKey];
                 $newCart[$cartKey]['quantity'] = $qty;
@@ -206,7 +227,7 @@ class CartModel extends BaseDatabaseModel
             return min((float) $coupon->value, $subtotal);
         }
 
-        return round($subtotal * (float) $coupon->value / 100, 2);
+        return round($subtotal * min(100, max(0, (float) $coupon->value)) / 100, 2);
     }
 
     private function getSessionCart(): array
@@ -222,5 +243,57 @@ class CartModel extends BaseDatabaseModel
     private function saveCoupon(?string $code): void
     {
         Factory::getApplication()->getSession()->set(self::COUPON_KEY, $code);
+    }
+
+    /**
+     * Convert browser-supplied option data into canonical database-backed data.
+     * null means no options; false means invalid options.
+     */
+    private function canonicalizeVariantInfo(int $productId, array $variantInfo): array|false|null
+    {
+        if (empty($variantInfo)) {
+            return null;
+        }
+
+        $optionIds = [];
+        foreach ($variantInfo as $selection) {
+            $optionId = (int) ($selection['option_id'] ?? 0);
+            if ($optionId <= 0) {
+                return false;
+            }
+            $optionIds[] = $optionId;
+        }
+
+        $db = $this->getDatabase();
+        $options = $db->setQuery(
+            $db->getQuery(true)
+                ->select(['o.id', 'o.label', 'o.price_modifier', 'o.sku_suffix', 'o.stock', 'v.name AS variant_name'])
+                ->from($db->quoteName('#__sanctuaryshop_product_variant_options', 'o'))
+                ->innerJoin($db->quoteName('#__sanctuaryshop_product_variants', 'v') . ' ON v.id = o.variant_id')
+                ->where('o.product_id = ' . $productId)
+                ->whereIn('o.id', $optionIds)
+        )->loadObjectList('id');
+
+        if (count($options) !== count(array_unique($optionIds))) {
+            return false;
+        }
+
+        $canonical = [];
+        foreach ($optionIds as $optionId) {
+            $option = $options[$optionId] ?? null;
+            if (!$option || isset($canonical[$option->variant_name])) {
+                return false;
+            }
+            $canonical[$option->variant_name] = [
+                'option_id'      => (int) $option->id,
+                'label'          => (string) $option->label,
+                'price_modifier' => (float) $option->price_modifier,
+                'sku_suffix'     => (string) $option->sku_suffix,
+                'stock'          => (int) $option->stock,
+            ];
+        }
+
+        ksort($canonical);
+        return $canonical;
     }
 }

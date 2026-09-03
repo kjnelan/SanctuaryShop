@@ -63,7 +63,7 @@ $total       = round($afterDisc + $tax + $shipping, 2);
                                 <td class="text-end"><?php echo $sym . number_format($item->unit_price, 2); ?></td>
                                 <td class="text-center">
                                     <input type="number"
-                                           name="quantity[<?php echo (int) $item->product_id; ?>]"
+                                           name="quantity[<?php echo $this->escape($item->cart_key); ?>]"
                                            value="<?php echo (int) $item->quantity; ?>"
                                            min="0" max="999"
                                            class="form-control form-control-sm text-center">
@@ -72,7 +72,7 @@ $total       = round($afterDisc + $tax + $shipping, 2);
                                 <td class="text-end pe-3">
                                     <button type="button" class="btn btn-sm btn-outline-danger"
                                             title="<?php echo Text::_('COM_SANCTUARYSHOP_REMOVE'); ?>"
-                                            onclick="removeItem(<?php echo (int) $item->product_id; ?>)">
+                                            onclick="removeItem('<?php echo $this->escape($item->cart_key); ?>')">
                                         &times;
                                     </button>
                                 </td>
@@ -92,7 +92,7 @@ $total       = round($afterDisc + $tax + $shipping, 2);
                     </button>
                 </div>
 
-                <input type="hidden" id="remove_product_id" name="product_id" value="0">
+                <input type="hidden" id="remove_cart_key" name="cart_key" value="">
                 <?php echo HTMLHelper::_('form.token'); ?>
             </form>
         </div>
@@ -175,9 +175,9 @@ $total       = round($afterDisc + $tax + $shipping, 2);
 </div>
 
 <script>
-function removeItem(productId) {
+function removeItem(cartKey) {
     var form = document.getElementById('cartForm');
-    document.getElementById('remove_product_id').value = productId;
+    document.getElementById('remove_cart_key').value = cartKey;
     form.action = '<?php echo Route::_('index.php?option=com_sanctuaryshop&task=cart.remove'); ?>';
     form.submit();
 }

@@ -11,7 +11,9 @@ class DisplayController extends BaseController
 
     public function display($cachable = false, $urlparams = []): static
     {
-        $cachable = true;
+        // Cart, checkout, account, confirmation, and download views contain
+        // session/customer-specific data and must never be page-cached.
+        $cachable = false;
 
         $safeurlparams = [
             'catid'  => 'INT',

@@ -21,6 +21,21 @@ class CheckoutModel extends BaseDatabaseModel
             throw new \RuntimeException('Your cart is empty.');
         }
 
+        $firstName = trim((string) ($data['billing_firstname'] ?? ''));
+        $lastName  = trim((string) ($data['billing_lastname'] ?? ''));
+        $email     = trim((string) ($data['billing_email'] ?? ''));
+        if ($firstName === '' || $lastName === '' || !MailHelper::isEmailAddress($email)) {
+            throw new \RuntimeException('Please provide a valid name and email address.');
+        }
+
+        foreach (['address_line_1', 'locality', 'postal_code'] as $field) {
+            if (trim((string) (($data['billing'] ?? [])[$field] ?? '')) === '') {
+                throw new \RuntimeException('Please complete the billing address.');
+            }
+        }
+
+        $this->validateInventory($cartItems);
+
         $subtotal = $cartModel->getSubtotal();
         $discount = $cartModel->getCouponDiscount($subtotal);
         $afterDiscount = max(0, $subtotal - $discount);
@@ -36,7 +51,7 @@ class CheckoutModel extends BaseDatabaseModel
         $user = Factory::getApplication()->getIdentity();
         $now  = Factory::getDate()->toSql();
 
-        $billingName = trim(($data['billing_firstname'] ?? '') . ' ' . ($data['billing_lastname'] ?? ''));
+        $billingName = $firstName . ' ' . $lastName;
 
         $order = (object) [
             'user_id'          => (int) $user->id,
@@ -49,7 +64,7 @@ class CheckoutModel extends BaseDatabaseModel
             'total'            => $total,
             'currency'         => strtoupper($params->get('currency', 'USD')),
             'billing_name'     => $billingName,
-            'billing_email'    => trim($data['billing_email'] ?? ''),
+            'billing_email'    => $email,
             'billing_address'  => json_encode($data['billing'] ?? []),
             'shipping_address' => json_encode($data['shipping'] ?? $data['billing'] ?? []),
             'payment_method'   => 'square',
@@ -59,6 +74,8 @@ class CheckoutModel extends BaseDatabaseModel
 
         $db->insertObject('#__sanctuaryshop_orders', $order);
         $orderId = (int) $db->insertid();
+
+        Factory::getApplication()->getSession()->set('sanctuaryshop.pending_order_id', $orderId);
 
         foreach ($cartItems as $item) {
             $variantInfoJson = null;
@@ -92,6 +109,10 @@ class CheckoutModel extends BaseDatabaseModel
             throw new \RuntimeException('Square is not configured. Set your credentials in Components → SanctuaryShop → Options.');
         }
 
+        if ($orderId <= 0 || $sourceId === '' || strlen($sourceId) > 255) {
+            throw new \RuntimeException('Invalid payment request.');
+        }
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('*')
@@ -100,8 +121,19 @@ class CheckoutModel extends BaseDatabaseModel
         $order = $db->setQuery($query)->loadObject();
 
         if (!$order || $order->status !== 'pending') {
+            if ($order && $order->status === 'completed' && !empty($order->payment_id)) {
+                return (string) $order->payment_id;
+            }
             throw new \RuntimeException('Order not found or already processed.');
         }
+
+        $user = Factory::getApplication()->getIdentity();
+        $pendingOrderId = (int) Factory::getApplication()->getSession()->get('sanctuaryshop.pending_order_id', 0);
+        if ($pendingOrderId !== $orderId && ((int) $user->id === 0 || (int) $order->user_id !== (int) $user->id)) {
+            throw new \RuntimeException('This checkout session is no longer valid.');
+        }
+
+        $this->validateInventory($this->getOrderItemsForCheckout($orderId));
 
         $baseUrl     = $environment === 'production'
             ? 'https://connect.squareup.com'
@@ -109,7 +141,8 @@ class CheckoutModel extends BaseDatabaseModel
         $amountCents = (int) round((float) $order->total * 100);
 
         $payload = json_encode([
-            'idempotency_key' => 'ss-' . $orderId . '-' . time(),
+            // Stable across retries, including a timeout after Square accepted the payment.
+            'idempotency_key' => 'ss-' . hash('sha256', (string) $orderId),
             'source_id'       => $sourceId,
             'amount_money'    => ['amount' => $amountCents, 'currency' => $order->currency],
             'location_id'     => $locationId,
@@ -159,6 +192,8 @@ class CheckoutModel extends BaseDatabaseModel
             'modified'        => Factory::getDate()->toSql(),
         ];
         $db->updateObject('#__sanctuaryshop_orders', $update, 'id');
+
+        Factory::getApplication()->getSession()->set('sanctuaryshop.confirmation_order_id', $orderId);
 
         // Clear cart
         (new CartModel(['ignore_request' => true]))->clear();
@@ -250,9 +285,12 @@ class CheckoutModel extends BaseDatabaseModel
                     ->where($db->quoteName('id') . ' = ' . (int) $item->product_id)
                     ->where($db->quoteName('stock') . ' >= ' . (int) $item->quantity);
                 $db->setQuery($update)->execute();
+                if ($db->getAffectedRows() !== 1) {
+                    throw new \RuntimeException('Inventory changed while processing the order.');
+                }
             }
         } catch (\Exception $e) {
-            // Non-fatal
+            Factory::getApplication()->enqueueMessage('Inventory update failed for order #' . $orderId . ': ' . $e->getMessage(), 'error');
         }
     }
 
@@ -344,11 +382,14 @@ class CheckoutModel extends BaseDatabaseModel
             $mailer->setSubject($subject);
             $mailer->isHtml(true);
             $mailer->setBody($htmlBody);
-            $mailer->addRecipient(array_shift($recipients));
-            foreach ($recipients as $r) {
-                $mailer->addBcc($r);
+            $mailer->setAltBody($textBody);
+            if (!empty($recipients)) {
+                $mailer->addRecipient(array_shift($recipients));
+                foreach ($recipients as $r) {
+                    $mailer->addBcc($r);
+                }
+                $mailer->Send();
             }
-            $mailer->Send();
         } catch (\Exception $e) {
             // Non-fatal
         }
@@ -360,5 +401,46 @@ class CheckoutModel extends BaseDatabaseModel
         ob_start();
         include JPATH_SITE . '/components/com_sanctuaryshop/tmpl/email/' . $template . '.php';
         return ob_get_clean();
+    }
+
+    private function getOrderItemsForCheckout(int $orderId): array
+    {
+        $db = $this->getDatabase();
+        $rows = $db->setQuery(
+            $db->getQuery(true)
+                ->select(['product_id', 'quantity', 'variant_info'])
+                ->from($db->quoteName('#__sanctuaryshop_order_items'))
+                ->where('order_id = ' . $orderId)
+        )->loadObjectList() ?: [];
+        return $rows;
+    }
+
+    private function validateInventory(array $items): void
+    {
+        $db = $this->getDatabase();
+        foreach ($items as $item) {
+            $productId = (int) $item->product_id;
+            $quantity  = max(1, (int) $item->quantity);
+            $product = $db->setQuery(
+                $db->getQuery(true)
+                    ->select(['product_type', 'stock'])
+                    ->from($db->quoteName('#__sanctuaryshop_products'))
+                    ->where('id = ' . $productId)
+            )->loadObject();
+            if (!$product) {
+                throw new \RuntimeException('A product in your cart is no longer available.');
+            }
+            if (in_array($product->product_type, ['', 'physical'], true) && (int) $product->stock < $quantity) {
+                throw new \RuntimeException('A product in your cart no longer has enough stock.');
+            }
+            $variantInfo = is_string($item->variant_info ?? null)
+                ? json_decode($item->variant_info, true)
+                : ($item->variant_info ?? []);
+            foreach ((array) $variantInfo as $selection) {
+                if ((int) ($selection['stock'] ?? -1) >= 0 && (int) $selection['stock'] < $quantity) {
+                    throw new \RuntimeException('A selected product option no longer has enough stock.');
+                }
+            }
+        }
     }
 }
