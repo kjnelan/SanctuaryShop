@@ -80,10 +80,6 @@ $p = $this->params;
                         <label class="form-label fw-semibold" for="pending_order_expiry_minutes"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY'); ?></label>
                         <input type="number" class="form-control" id="pending_order_expiry_minutes" name="pending_order_expiry_minutes" value="<?php echo (int) $p->get('pending_order_expiry_minutes', 60); ?>" min="15" max="10080">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="low_stock_threshold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_LOW_STOCK'); ?></label>
-                        <input type="number" class="form-control" id="low_stock_threshold" name="low_stock_threshold" value="<?php echo (int) $p->get('low_stock_threshold', 5); ?>" min="0">
-                    </div>
                 </div>
             </div>
         </div>
@@ -188,7 +184,10 @@ $p = $this->params;
     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
     <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'inventory', Text::_('COM_SANCTUARYSHOP_TAB_INVENTORY')); ?>
-    <div class="row"><div class="col-md-8"><div class="card mb-3"><div class="card-body"><div class="form-check"><input class="form-check-input" type="checkbox" id="allow_backorders" name="allow_backorders" value="1"<?php echo (int) $p->get('allow_backorders', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="allow_backorders"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ALLOW_BACKORDERS'); ?></label></div></div></div></div></div>
+    <div class="row"><div class="col-md-8"><div class="card mb-3"><div class="card-body">
+        <div class="mb-3"><label class="form-label fw-semibold" for="low_stock_threshold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_LOW_STOCK'); ?></label><input type="number" class="form-control" id="low_stock_threshold" name="low_stock_threshold" value="<?php echo (int) $p->get('low_stock_threshold', 5); ?>" min="0"><div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_LOW_STOCK_NOTE'); ?></div></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" id="allow_backorders" name="allow_backorders" value="1"<?php echo (int) $p->get('allow_backorders', 0) === 1 ? ' checked' : ''; ?>><label class="form-check-label" for="allow_backorders"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ALLOW_BACKORDERS'); ?></label></div>
+    </div></div></div></div>
     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
     <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'downloads', Text::_('COM_SANCTUARYSHOP_TAB_DOWNLOADS')); ?>
