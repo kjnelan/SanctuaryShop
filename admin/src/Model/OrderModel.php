@@ -84,6 +84,11 @@ class OrderModel extends AdminModel
         (new CheckoutModel)->reissueDownloads($orderId);
     }
 
+    public function cancelSubscription(int $orderId): void
+    {
+        (new CheckoutModel)->cancelSubscription($orderId);
+    }
+
     public function save($data)
     {
         // Ensure tracking_number is preserved

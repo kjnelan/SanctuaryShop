@@ -97,6 +97,10 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                         <dt class="col-6"><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_REFUND_ID'); ?></dt>
                         <dd class="col-6 small"><?php echo $this->escape($this->item->square_refund_id); ?></dd>
                         <?php endif; ?>
+                        <?php if (!empty($this->item->square_subscription_id)) : ?>
+                        <dt class="col-6">Subscription</dt>
+                        <dd class="col-6 small"><?php echo $this->escape($this->item->square_subscription_id); ?> (<?php echo $this->escape($this->item->square_subscription_status ?: 'ACTIVE'); ?>)</dd>
+                        <?php endif; ?>
                         <dt class="col-6"><?php echo Text::_('COM_SANCTUARYSHOP_FIELD_DATE'); ?></dt>
                         <dd class="col-6"><?php echo HTMLHelper::_('date', $this->item->created, 'Y-m-d H:i'); ?></dd>
                         <?php if (!empty($this->item->coupon_code)) : ?>
@@ -137,7 +141,7 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                     <?php endforeach; ?>
                 </div>
             </div>
-            <?php if (!empty($this->item->payment_id) && $this->item->status !== 'refunded') : ?>
+            <?php if (!empty($this->item->payment_id) && $this->item->payment_method !== 'square_subscription' && $this->item->status !== 'refunded') : ?>
             <div class="card mb-3 border-danger">
                 <div class="card-body">
                     <form method="post" action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=order.refund'); ?>"
@@ -160,6 +164,14 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                     </form>
                 </div>
             </div>
+            <?php endif; ?>
+            <?php if (!empty($this->item->square_subscription_id) && ($this->item->square_subscription_status ?: 'ACTIVE') !== 'CANCELED') : ?>
+            <div class="card mb-3 border-warning"><div class="card-body">
+                <form method="post" action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=order.cancelSubscription'); ?>" onsubmit="return confirm('Cancel this Square subscription?');">
+                    <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>"><?php echo HTMLHelper::_('form.token'); ?>
+                    <button type="submit" class="btn btn-outline-warning w-100">Cancel subscription</button>
+                </form>
+            </div></div>
             <?php endif; ?>
         </div>
     </div>

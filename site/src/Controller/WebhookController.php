@@ -39,6 +39,14 @@ class WebhookController extends BaseController
         }
 
         $object = $event['data']['object'] ?? [];
+        $subscription = $object['subscription'] ?? null;
+        if (is_array($subscription) && !empty($subscription['id'])) {
+            $db->setQuery(
+                $db->getQuery(true)->update($db->quoteName('#__sanctuaryshop_orders'))
+                    ->set('square_subscription_status = ' . $db->quote(strtoupper((string) ($subscription['status'] ?? ''))))
+                    ->where('square_subscription_id = ' . $db->quote((string) $subscription['id']))
+            )->execute();
+        }
         $payment = $object['payment'] ?? $object;
         $paymentId = (string) ($payment['id'] ?? '');
         $status = strtoupper((string) ($payment['status'] ?? ''));

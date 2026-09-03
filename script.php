@@ -46,6 +46,7 @@ class Com_SanctuaryshopInstallerScript
                     `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     `category_id`      INT NOT NULL DEFAULT 0,
                     `product_type`     VARCHAR(20) NOT NULL DEFAULT 'physical',
+                    `subscription_plan_id` VARCHAR(255) NOT NULL DEFAULT '',
                     `title`            VARCHAR(255) NOT NULL DEFAULT '',
                     `alias`            VARCHAR(400) NOT NULL DEFAULT '',
                     `description`      MEDIUMTEXT NULL,
@@ -91,6 +92,8 @@ class Com_SanctuaryshopInstallerScript
                     `payment_id`       VARCHAR(255) NULL DEFAULT NULL,
                     `square_order_id`  VARCHAR(255) NULL DEFAULT NULL,
                     `square_refund_id` VARCHAR(255) NULL DEFAULT NULL,
+                    `square_subscription_id` VARCHAR(255) NULL DEFAULT NULL,
+                    `square_subscription_status` VARCHAR(30) NULL DEFAULT NULL,
                     `notes`            TEXT NULL,
                     `created`          DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
                     `modified`         DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
@@ -312,6 +315,24 @@ class Com_SanctuaryshopInstallerScript
             $db->setQuery("CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_refunds` (`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `order_id` INT UNSIGNED NOT NULL, `square_refund_id` VARCHAR(255) NOT NULL DEFAULT '', `amount` DECIMAL(10,2) NOT NULL DEFAULT '0.00', `currency` VARCHAR(10) NOT NULL DEFAULT 'USD', `status` VARCHAR(30) NOT NULL DEFAULT 'COMPLETED', `created` DATETIME NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `idx_square_refund` (`square_refund_id`), KEY `idx_refund_order` (`order_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci")->execute();
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage('SanctuaryShop installer (refund ledger): ' . $e->getMessage(), 'warning');
+        }
+
+        // v1.8 — Square subscription plan and subscription reference
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_products` LIKE 'subscription_plan_id'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_products` ADD COLUMN `subscription_plan_id` VARCHAR(255) NOT NULL DEFAULT '' AFTER `product_type`")->execute();
+            }
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'square_subscription_id'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `square_subscription_id` VARCHAR(255) NULL DEFAULT NULL AFTER `square_refund_id`")->execute();
+            }
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'square_subscription_status'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `square_subscription_status` VARCHAR(30) NULL DEFAULT NULL AFTER `square_subscription_id`")->execute();
+            }
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage('SanctuaryShop installer (subscriptions): ' . $e->getMessage(), 'warning');
         }
     }
 }

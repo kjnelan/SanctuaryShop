@@ -25,8 +25,14 @@ class CheckoutModel extends BaseDatabaseModel
         if ((int) $params->get('require_terms', 1) === 1 && empty($data['accept_terms'])) {
             throw new \RuntimeException('Please accept the terms and conditions before placing your order.');
         }
-        if (array_filter($cartItems, static fn($item) => ($item->product_type ?? '') === 'subscription')) {
-            throw new \RuntimeException('Subscription products are not available until recurring billing is configured.');
+        $subscriptionItems = array_values(array_filter($cartItems, static fn($item) => ($item->product_type ?? '') === 'subscription'));
+        if ($subscriptionItems && count($subscriptionItems) !== count($cartItems)) {
+            throw new \RuntimeException('Subscription products must be purchased separately from one-time products.');
+        }
+        foreach ($subscriptionItems as $item) {
+            if (empty($item->subscription_plan_id) || (int) $item->quantity !== 1) {
+                throw new \RuntimeException('This subscription is not configured for online purchase.');
+            }
         }
 
         $firstName = trim((string) ($data['billing_firstname'] ?? ''));
@@ -140,6 +146,10 @@ class CheckoutModel extends BaseDatabaseModel
             throw new \RuntimeException('Order not found or already processed.');
         }
 
+        if ($this->getSubscriptionPlanForOrder($orderId)) {
+            return $this->createSubscriptionWithSquare($orderId, $sourceId, $order);
+        }
+
         $user = Factory::getApplication()->getIdentity();
         $pendingOrderId = (int) Factory::getApplication()->getSession()->get('sanctuaryshop.pending_order_id', 0);
         if ($pendingOrderId !== $orderId && ((int) $user->id === 0 || (int) $order->user_id !== (int) $user->id)) {
@@ -217,6 +227,9 @@ class CheckoutModel extends BaseDatabaseModel
         if (!$order || empty($order->payment_id)) {
             throw new \RuntimeException('This order has no Square payment to refund.');
         }
+        if ($order->payment_method === 'square_subscription') {
+            throw new \RuntimeException('Subscription refunds must be managed from the Square subscription record.');
+        }
         if ($order->status !== 'completed') {
             throw new \RuntimeException('Only a completed order can be refunded.');
         }
@@ -270,6 +283,76 @@ class CheckoutModel extends BaseDatabaseModel
         return (string) $refundId;
     }
 
+    private function getSubscriptionPlanForOrder(int $orderId): ?string
+    {
+        $db = $this->getDatabase();
+        $plan = $db->setQuery(
+            $db->getQuery(true)->select('p.subscription_plan_id')->from($db->quoteName('#__sanctuaryshop_order_items', 'oi'))
+                ->innerJoin($db->quoteName('#__sanctuaryshop_products', 'p') . ' ON p.id = oi.product_id')
+                ->where('oi.order_id = ' . (int) $orderId)->where("p.product_type = 'subscription'")
+        )->loadResult();
+        return $plan ? (string) $plan : null;
+    }
+
+    private function createSubscriptionWithSquare(int $orderId, string $sourceId, object $order): string
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $token = (string) $params->get('square_access_token', '');
+        $locationId = (string) $params->get('square_location_id', '');
+        $planId = $this->getSubscriptionPlanForOrder($orderId);
+        if (!$token || !$locationId || !$planId) {
+            throw new \RuntimeException('Square subscription settings are incomplete.');
+        }
+        $baseUrl = $params->get('square_environment', 'sandbox') === 'production' ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
+        $address = json_decode((string) $order->billing_address, true) ?: [];
+        $name = preg_split('/\s+/', trim((string) $order->billing_name), 2) ?: [];
+        $customer = $this->squareRequest($baseUrl, '/v2/customers', [
+            'idempotency_key' => 'ss-customer-' . hash('sha256', (string) $orderId),
+            'given_name' => $name[0] ?? '', 'family_name' => $name[1] ?? '', 'email_address' => $order->billing_email,
+            'address' => ['address_line_1' => $address['address_line_1'] ?? '', 'locality' => $address['locality'] ?? '', 'administrative_district_level_1' => $address['administrative_district_level_1'] ?? '', 'postal_code' => $address['postal_code'] ?? '', 'country' => $address['country'] ?? 'US'],
+        ], $token);
+        $customerId = (string) ($customer['customer']['id'] ?? '');
+        if (!$customerId) {
+            throw new \RuntimeException($customer['errors'][0]['detail'] ?? 'Square customer creation failed.');
+        }
+        $card = $this->squareRequest($baseUrl, '/v2/cards', [
+            'idempotency_key' => 'ss-card-' . hash('sha256', (string) $orderId), 'source_id' => $sourceId,
+            'card' => ['customer_id' => $customerId, 'cardholder_name' => $order->billing_name, 'billing_address' => ['postal_code' => $address['postal_code'] ?? '']],
+        ], $token);
+        $cardId = (string) ($card['card']['id'] ?? '');
+        if (!$cardId) {
+            throw new \RuntimeException($card['errors'][0]['detail'] ?? 'Square could not store the payment card.');
+        }
+        $subscription = $this->squareRequest($baseUrl, '/v2/subscriptions', [
+            'idempotency_key' => 'ss-subscription-' . hash('sha256', (string) $orderId),
+            'location_id' => $locationId, 'plan_variation_id' => $planId, 'customer_id' => $customerId, 'card_id' => $cardId,
+        ], $token);
+        $subscriptionId = (string) ($subscription['subscription']['id'] ?? '');
+        if (!$subscriptionId) {
+            throw new \RuntimeException($subscription['errors'][0]['detail'] ?? 'Square subscription creation failed.');
+        }
+        $this->finalizePaidOrder($orderId, 'subscription:' . $subscriptionId, null, $order);
+        $this->getDatabase()->setQuery(
+            $this->getDatabase()->getQuery(true)->update($this->getDatabase()->quoteName('#__sanctuaryshop_orders'))
+                ->set('payment_method = ' . $this->getDatabase()->quote('square_subscription'))
+                ->set('square_subscription_id = ' . $this->getDatabase()->quote($subscriptionId))
+                ->where('id = ' . (int) $orderId)
+        )->execute();
+        return $subscriptionId;
+    }
+
+    private function squareRequest(string $baseUrl, string $path, array $payload, string $token): array
+    {
+        $ch = curl_init($baseUrl . $path);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload), CURLOPT_HTTPHEADER => ['Square-Version: 2026-08-19', 'Authorization: Bearer ' . $token, 'Content-Type: application/json', 'Accept: application/json'], CURLOPT_TIMEOUT => 30]);
+        $response = curl_exec($ch); $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); $error = curl_error($ch); curl_close($ch);
+        $result = json_decode((string) $response, true) ?: [];
+        if ($error || $httpCode < 200 || $httpCode >= 300) {
+            throw new \RuntimeException($error ?: ($result['errors'][0]['detail'] ?? 'Square API request failed.'));
+        }
+        return $result;
+    }
+
     public function reissueDownloads(int $orderId): void
     {
         $db = $this->getDatabase();
@@ -279,6 +362,19 @@ class CheckoutModel extends BaseDatabaseModel
         }
         $this->generateDownloadTokens($orderId, (int) $order->user_id);
         $this->sendOrderConfirmation($orderId, $order);
+    }
+
+    public function cancelSubscription(int $orderId): void
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $db = $this->getDatabase();
+        $order = $db->setQuery($db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . (int) $orderId))->loadObject();
+        if (!$order || empty($order->square_subscription_id) || $order->payment_method !== 'square_subscription') {
+            throw new \RuntimeException('This order has no active Square subscription.');
+        }
+        $baseUrl = $params->get('square_environment', 'sandbox') === 'production' ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
+        $this->squareRequest($baseUrl, '/v2/subscriptions/' . rawurlencode($order->square_subscription_id) . '/cancel', [], (string) $params->get('square_access_token', ''));
+        $db->setQuery($db->getQuery(true)->update($db->quoteName('#__sanctuaryshop_orders'))->set('square_subscription_status = ' . $db->quote('CANCELED'))->where('id = ' . (int) $orderId))->execute();
     }
 
     public function finalizePaidOrder(int $orderId, string $paymentId, ?string $squareOrderId = null, ?object $knownOrder = null): void
