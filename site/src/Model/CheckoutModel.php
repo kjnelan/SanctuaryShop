@@ -44,13 +44,16 @@ class CheckoutModel extends BaseDatabaseModel
         $subtotal = $cartModel->getSubtotal();
         $discount = $cartModel->getCouponDiscount($subtotal);
         $afterDiscount = max(0, $subtotal - $discount);
-        $taxRate  = (float) $params->get('tax_rate', 0) / 100;
+        $billingAddress = (array) ($data['billing'] ?? []);
+        $shippingAddress = (array) ($data['shipping'] ?? $billingAddress);
+        $taxRate  = self::locationRate($params->get('tax_rules', ''), $billingAddress, (float) $params->get('tax_rate', 0)) / 100;
         $tax      = round($afterDiscount * $taxRate, 2);
 
         $flatRate      = (float) $params->get('shipping_flat_rate', 0);
         $freeThreshold = (float) $params->get('shipping_free_threshold', 0);
         $requiresShipping = (bool) array_filter($cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
-        $shipping      = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $flatRate);
+        $shippingRate = self::locationRate($params->get('shipping_rules', ''), $shippingAddress, $flatRate);
+        $shipping      = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $subtotal >= $freeThreshold) ? 0.00 : $shippingRate);
         $total         = round($afterDiscount + $tax + $shipping, 2);
 
         $db   = $this->getDatabase();
@@ -587,5 +590,36 @@ class CheckoutModel extends BaseDatabaseModel
         }
         $session->set('sanctuaryshop.checkout_window', $windowStart);
         $session->set('sanctuaryshop.checkout_attempts', $attempts + 1);
+    }
+
+    public static function locationRate(string $rules, array $address, float $fallback): float
+    {
+        $country = strtoupper(trim((string) ($address['country'] ?? '')));
+        $state = strtoupper(trim((string) ($address['administrative_district_level_1'] ?? '')));
+        $keys = [];
+        if ($country !== '' && $state !== '') {
+            $keys[] = $country . '-' . $state;
+        }
+        if ($country !== '') {
+            $keys[] = $country;
+        }
+        $matches = [];
+        foreach (preg_split('/\R/', $rules) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            $key = strtoupper($key);
+            if (in_array($key, $keys, true) && is_numeric($value)) {
+                $matches[$key] = max(0, (float) $value);
+            }
+        }
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $matches)) {
+                return $matches[$key];
+            }
+        }
+        return max(0, $fallback);
     }
 }

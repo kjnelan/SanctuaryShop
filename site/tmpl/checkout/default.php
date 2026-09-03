@@ -2,6 +2,7 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -175,18 +176,18 @@ foreach ($this->cartItems as $item) {
                         <?php if ($this->taxRate > 0) : ?>
                         <tr>
                             <td><?php echo Text::sprintf('COM_SANCTUARYSHOP_TAX_RATE_PCT', $this->taxRate); ?></td>
-                            <td class="text-end"><?php echo $sym . number_format($this->tax, 2); ?></td>
+                            <td id="checkout-tax" class="text-end"><?php echo $sym . number_format($this->tax, 2); ?></td>
                         </tr>
                         <?php endif; ?>
                         <?php if ($this->shipping > 0) : ?>
                         <tr>
                             <td><?php echo Text::_('COM_SANCTUARYSHOP_SHIPPING'); ?></td>
-                            <td class="text-end"><?php echo $sym . number_format($this->shipping, 2); ?></td>
+                            <td id="checkout-shipping" class="text-end"><?php echo $sym . number_format($this->shipping, 2); ?></td>
                         </tr>
                         <?php endif; ?>
                         <tr class="fw-bold">
                             <td><?php echo Text::_('COM_SANCTUARYSHOP_TOTAL'); ?></td>
-                            <td class="text-end fs-5"><?php echo $sym . number_format($this->total, 2); ?></td>
+                            <td id="checkout-total" class="text-end fs-5"><?php echo $sym . number_format($this->total, 2); ?></td>
                         </tr>
                     </table>
                 </div>
@@ -204,14 +205,57 @@ foreach ($this->cartItems as $item) {
     const processUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.process&format=raw', false)); ?>;
     const payUrl     = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&task=checkout.squarePayment&format=raw', false)); ?>;
     const confirmUrl = <?php echo json_encode(Route::_('index.php?option=com_sanctuaryshop&view=checkout&layout=confirmation', false)); ?>;
+    const taxRules = <?php echo json_encode((string) ComponentHelper::getParams('com_sanctuaryshop')->get('tax_rules', '')); ?>;
+    const shippingRules = <?php echo json_encode((string) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_rules', '')); ?>;
+    const baseTax = <?php echo json_encode((float) $this->taxRate); ?>;
+    const baseShipping = <?php echo json_encode((float) $this->shipping); ?>;
+    const subtotal = <?php echo json_encode((float) $this->subtotal); ?>;
+    const discount = <?php echo json_encode((float) $this->discount); ?>;
+    const flatShipping = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_flat_rate', 0)); ?>;
+    const freeShippingThreshold = <?php echo json_encode((float) ComponentHelper::getParams('com_sanctuaryshop')->get('shipping_free_threshold', 0)); ?>;
 
     const payBtn = document.getElementById('pay-button');
     const msgBox = document.getElementById('payment-message');
 
+    function locationRate(rules, country, state, fallback) {
+        const keys = [];
+        country = (country || '').trim().toUpperCase();
+        state = (state || '').trim().toUpperCase();
+        if (country && state) keys.push(country + '-' + state);
+        if (country) keys.push(country);
+        const values = {};
+        (rules || '').split(/\r?\n/).forEach(line => {
+            const p = line.split('=');
+            if (p.length === 2 && !p[0].trim().startsWith('#') && !isNaN(parseFloat(p[1]))) values[p[0].trim().toUpperCase()] = Math.max(0, parseFloat(p[1]));
+        });
+        for (const key of keys) if (Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+        return Math.max(0, fallback);
+    }
+
+    function updateDisplayedTotals() {
+        const country = document.getElementById('billing_country')?.value || 'US';
+        const state = document.getElementById('billing_state_field')?.value || '';
+        const taxRate = locationRate(taxRules, country, state, baseTax);
+        const tax = Math.round(Math.max(0, subtotal - discount) * taxRate) / 100;
+        const same = document.getElementById('same_as_billing')?.checked ?? true;
+        const shipCountry = same ? country : (document.getElementById('shipping_country')?.value || country);
+        const shipState = same ? state : (document.getElementById('shipping_state_field')?.value || '');
+        const shippingRate = locationRate(shippingRules, shipCountry, shipState, flatShipping);
+        const shipping = freeShippingThreshold > 0 && subtotal >= freeShippingThreshold ? 0 : shippingRate;
+        const total = Math.round((Math.max(0, subtotal - discount) + tax + shipping) * 100) / 100;
+        document.getElementById('checkout-tax') && (document.getElementById('checkout-tax').textContent = <?php echo json_encode($sym); ?> + tax.toFixed(2));
+        document.getElementById('checkout-shipping') && (document.getElementById('checkout-shipping').textContent = <?php echo json_encode($sym); ?> + shipping.toFixed(2));
+        document.getElementById('checkout-total') && (document.getElementById('checkout-total').textContent = <?php echo json_encode($sym); ?> + total.toFixed(2));
+        payBtn.textContent = '<?php echo Text::_('COM_SANCTUARYSHOP_PAY'); ?> ' + <?php echo json_encode($sym); ?> + total.toFixed(2);
+    }
+
     // Same-as-billing toggle
     document.getElementById('same_as_billing')?.addEventListener('change', function () {
         document.getElementById('shipping-fields').style.display = this.checked ? 'none' : '';
+        updateDisplayedTotals();
     });
+    ['billing_country', 'billing_state_field', 'shipping_country', 'shipping_state_field'].forEach(id => document.getElementById(id)?.addEventListener('input', updateDisplayedTotals));
+    updateDisplayedTotals();
 
     function showMessage(text, type = 'danger') {
         msgBox.className = 'alert alert-' + type;

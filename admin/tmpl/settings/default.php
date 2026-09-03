@@ -34,6 +34,7 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="tax_rate"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TAX_RATE'); ?></label>
                         <input type="number" class="form-control" id="tax_rate" name="tax_rate" value="<?php echo (float) $p->get('tax_rate', 0); ?>" min="0" max="100" step="0.01">
+                        <textarea class="form-control mt-2" id="tax_rules" name="tax_rules" rows="4" placeholder="US=0&#10;US-TX=8.25"><?php echo $this->escape($p->get('tax_rules', '')); ?></textarea>
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TAX_RATE_NOTE'); ?></div>
                     </div>
                     <div class="mb-3">
@@ -109,6 +110,7 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="shipping_free_threshold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FREE_THRESHOLD'); ?></label>
                         <input type="number" class="form-control" id="shipping_free_threshold" name="shipping_free_threshold" value="<?php echo (float) $p->get('shipping_free_threshold', 0); ?>" min="0" step="0.01">
+                        <textarea class="form-control mt-2" id="shipping_rules" name="shipping_rules" rows="4" placeholder="US=5&#10;US-TX=8"><?php echo $this->escape($p->get('shipping_rules', '')); ?></textarea>
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_FREE_THRESHOLD_NOTE'); ?></div>
                     </div>
                 </div>

@@ -6,6 +6,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use SanctuaryShop\Component\Sanctuaryshop\Site\Model\CheckoutModel;
 
 class HtmlView extends BaseHtmlView
 {
@@ -30,7 +31,7 @@ class HtmlView extends BaseHtmlView
         $this->squareLocationId  = $params->get('square_location_id', '');
         $this->squareEnvironment = $params->get('square_environment', 'sandbox');
         $this->currency          = strtoupper($params->get('currency', 'USD'));
-        $this->taxRate           = (float) $params->get('tax_rate', 0);
+            $this->taxRate           = CheckoutModel::locationRate($params->get('tax_rules', ''), ['country' => 'US'], (float) $params->get('tax_rate', 0));
 
         $layout = $this->getLayout();
 
@@ -50,7 +51,8 @@ class HtmlView extends BaseHtmlView
             $flatRate          = (float) $params->get('shipping_flat_rate', 0);
             $freeThreshold     = (float) $params->get('shipping_free_threshold', 0);
             $requiresShipping  = (bool) array_filter($this->cartItems, static fn($item) => ($item->product_type ?? 'physical') === 'physical');
-            $this->shipping    = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $flatRate);
+            $shippingRate      = CheckoutModel::locationRate($params->get('shipping_rules', ''), ['country' => 'US'], $flatRate);
+            $this->shipping    = !$requiresShipping ? 0.00 : (($freeThreshold > 0 && $this->subtotal >= $freeThreshold) ? 0.00 : $shippingRate);
             $this->total       = round($afterDiscount + $this->tax + $this->shipping, 2);
 
             $sdkUrl = $this->squareEnvironment === 'production'

@@ -25,6 +25,7 @@ class SettingsController extends BaseController
         $params->set('shop_name',         $input->getString('shop_name', ''));
         $params->set('currency',          $input->getString('currency', 'USD'));
         $params->set('tax_rate',          $input->getFloat('tax_rate', 0));
+        $params->set('tax_rules',         $input->getString('tax_rules', ''));
         $params->set('products_per_page', $input->getInt('products_per_page', 12));
         $params->set('notify_email',      $input->getString('notify_email', ''));
         $params->set('pending_order_expiry_minutes', $input->getInt('pending_order_expiry_minutes', 60));
@@ -41,6 +42,7 @@ class SettingsController extends BaseController
         // Shipping
         $params->set('shipping_flat_rate',      $input->getFloat('shipping_flat_rate', 0));
         $params->set('shipping_free_threshold', $input->getFloat('shipping_free_threshold', 0));
+        $params->set('shipping_rules',          $input->getString('shipping_rules', ''));
 
         // Downloads
         $params->set('download_path',          $input->getString('download_path', ''));
