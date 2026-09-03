@@ -47,6 +47,10 @@ $p = $this->params;
                         <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL_NOTE'); ?></div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label fw-semibold" for="terms_url"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_TERMS_URL'); ?></label>
+                        <input type="url" class="form-control" id="terms_url" name="terms_url" value="<?php echo $this->escape($p->get('terms_url', '')); ?>" placeholder="https://example.org/terms">
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-semibold" for="pending_order_expiry_minutes"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY'); ?></label>
                         <input type="number" class="form-control" id="pending_order_expiry_minutes" name="pending_order_expiry_minutes" value="<?php echo (int) $p->get('pending_order_expiry_minutes', 60); ?>" min="15" max="10080">
                     </div>

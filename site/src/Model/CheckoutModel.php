@@ -22,6 +22,9 @@ class CheckoutModel extends BaseDatabaseModel
         if (empty($cartItems)) {
             throw new \RuntimeException('Your cart is empty.');
         }
+        if ((int) $params->get('require_terms', 1) === 1 && empty($data['accept_terms'])) {
+            throw new \RuntimeException('Please accept the terms and conditions before placing your order.');
+        }
         if (array_filter($cartItems, static fn($item) => ($item->product_type ?? '') === 'subscription')) {
             throw new \RuntimeException('Subscription products are not available until recurring billing is configured.');
         }
@@ -267,6 +270,17 @@ class CheckoutModel extends BaseDatabaseModel
         return (string) $refundId;
     }
 
+    public function reissueDownloads(int $orderId): void
+    {
+        $db = $this->getDatabase();
+        $order = $db->setQuery($db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . (int) $orderId))->loadObject();
+        if (!$order || $order->status !== 'completed') {
+            throw new \RuntimeException('Downloads can only be reissued for a completed order.');
+        }
+        $this->generateDownloadTokens($orderId, (int) $order->user_id);
+        $this->sendOrderConfirmation($orderId, $order);
+    }
+
     public function finalizePaidOrder(int $orderId, string $paymentId, ?string $squareOrderId = null, ?object $knownOrder = null): void
     {
         $db = $this->getDatabase();
@@ -299,7 +313,7 @@ class CheckoutModel extends BaseDatabaseModel
         $this->sendOrderConfirmation($orderId, $order);
     }
 
-    private function generateDownloadTokens(int $orderId): void
+    private function generateDownloadTokens(int $orderId, ?int $tokenUserId = null): void
     {
         try {
             $params    = ComponentHelper::getParams('com_sanctuaryshop');
@@ -308,6 +322,7 @@ class CheckoutModel extends BaseDatabaseModel
 
             $db    = $this->getDatabase();
             $user  = Factory::getApplication()->getIdentity();
+            $tokenUserId = $tokenUserId ?? (int) $user->id;
             $now   = Factory::getDate()->toSql();
             $expires = $expiryDays > 0
                 ? Factory::getDate('+' . $expiryDays . ' days')->toSql()
@@ -338,7 +353,7 @@ class CheckoutModel extends BaseDatabaseModel
                         'order_item_id'  => (int) $item->order_item_id,
                         'product_id'     => (int) $item->product_id,
                         'file_id'        => (int) $fileId,
-                        'user_id'        => (int) $user->id,
+                        'user_id'        => $tokenUserId,
                         'download_count' => 0,
                         'max_downloads'  => $maxDl,
                         'expires'        => $expires,

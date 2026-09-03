@@ -243,6 +243,9 @@ class ProductModel extends AdminModel
             if ($image === '') {
                 continue;
             }
+            if (!preg_match('#^(https?://|images/)#i', $image) || preg_match('/[\r\n]|javascript:/i', $image)) {
+                throw new \RuntimeException('Product images must be safe HTTPS/HTTP or Joomla images paths.');
+            }
             $altText = trim($data['alt_text'] ?? '');
             $imgId   = (int) $id;
 

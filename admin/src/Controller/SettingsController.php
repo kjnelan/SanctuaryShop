@@ -28,6 +28,8 @@ class SettingsController extends BaseController
         $params->set('tax_rules',         $input->getString('tax_rules', ''));
         $params->set('products_per_page', $input->getInt('products_per_page', 12));
         $params->set('notify_email',      $input->getString('notify_email', ''));
+        $params->set('require_terms',     $input->getInt('require_terms', 1));
+        $params->set('terms_url',         $input->getString('terms_url', ''));
         $params->set('pending_order_expiry_minutes', $input->getInt('pending_order_expiry_minutes', 60));
         $params->set('low_stock_threshold', $input->getInt('low_stock_threshold', 5));
 

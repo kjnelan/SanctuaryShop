@@ -79,6 +79,11 @@ class OrderModel extends AdminModel
         )->loadObjectList() ?: [];
     }
 
+    public function reissueDownloads(int $orderId): void
+    {
+        (new CheckoutModel)->reissueDownloads($orderId);
+    }
+
     public function save($data)
     {
         // Ensure tracking_number is preserved

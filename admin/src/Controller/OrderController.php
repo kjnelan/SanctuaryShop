@@ -58,6 +58,19 @@ class OrderController extends FormController
         $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&task=order.edit&id=' . $orderId, false));
     }
 
+    public function reissueDownloads(): void
+    {
+        Session::checkToken() or jexit('Invalid Token');
+        $orderId = $this->input->getInt('id');
+        try {
+            $this->getModel('Order')->reissueDownloads($orderId);
+            $this->setMessage('Fresh download links were generated and emailed to the customer.', 'success');
+        } catch (\Throwable $e) {
+            $this->setMessage($e->getMessage(), 'error');
+        }
+        $this->setRedirect(Route::_('index.php?option=com_sanctuaryshop&task=order.edit&id=' . $orderId, false));
+    }
+
     public function save($key = null, $urlVar = null)
     {
         $app   = Factory::getApplication();

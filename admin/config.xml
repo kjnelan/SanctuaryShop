@@ -17,6 +17,10 @@
         <field name="tax_rules" type="textarea" label="COM_SANCTUARYSHOP_CONFIG_TAX_RULES" rows="4" class="form-control" hint="One rule per line: US=0 or US-TX=8.25. More specific rules win." />
         <field name="products_per_page" type="number" label="COM_SANCTUARYSHOP_CONFIG_PRODUCTS_PER_PAGE" default="12" min="1" class="form-control" />
         <field name="notify_email" type="email" label="COM_SANCTUARYSHOP_CONFIG_NOTIFY_EMAIL" class="form-control" hint="Order notification recipient" />
+        <field name="require_terms" type="radio" label="COM_SANCTUARYSHOP_CONFIG_REQUIRE_TERMS" default="1" class="form-check form-check-inline">
+            <option value="1">JYES</option><option value="0">JNO</option>
+        </field>
+        <field name="terms_url" type="url" label="COM_SANCTUARYSHOP_CONFIG_TERMS_URL" class="form-control" />
         <field name="pending_order_expiry_minutes" type="number" label="COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY" default="60" min="15" max="10080" class="form-control" hint="Pending orders are cancelled after this many minutes." />
         <field name="low_stock_threshold" type="number" label="COM_SANCTUARYSHOP_CONFIG_LOW_STOCK" default="5" min="0" max="999999" class="form-control" hint="Dashboard alert threshold for physical products." />
     </fieldset>

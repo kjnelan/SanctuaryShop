@@ -132,6 +132,12 @@ foreach ($this->cartItems as $item) {
                 <div class="card-body">
                     <div id="card-container" class="mb-3 p-3 border rounded bg-light" style="min-height:90px"></div>
                     <div id="payment-message" class="mb-3" style="display:none"></div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="accept_terms" required>
+                        <label class="form-check-label small" for="accept_terms">
+                            I agree to the <?php if ($termsUrl = ComponentHelper::getParams('com_sanctuaryshop')->get('terms_url', '')) : ?><a href="<?php echo $this->escape($termsUrl); ?>" target="_blank" rel="noopener">terms and conditions</a><?php else : ?>terms and conditions<?php endif; ?>.
+                        </label>
+                    </div>
                     <button id="pay-button" class="btn btn-success btn-lg w-100" disabled>
                         <?php echo Text::_('COM_SANCTUARYSHOP_PAY'); ?> <?php echo $sym . number_format($this->total, 2); ?>
                     </button>
@@ -311,6 +317,7 @@ foreach ($this->cartItems as $item) {
                 'jform[billing][administrative_district_level_1]': document.getElementById('billing_state_field').value,
                 'jform[billing][postal_code]':      document.getElementById('billing_zip').value,
                 'jform[billing][country]':          document.getElementById('billing_country').value,
+                'jform[accept_terms]':              document.getElementById('accept_terms')?.checked ? '1' : '0',
             });
 
             if (!sameAsBilling) {

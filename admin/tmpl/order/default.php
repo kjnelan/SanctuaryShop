@@ -150,6 +150,17 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                 </div>
             </div>
             <?php endif; ?>
+            <?php if ($this->item->status === 'completed') : ?>
+            <div class="card mb-3 border-info">
+                <div class="card-body">
+                    <form method="post" action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=order.reissueDownloads'); ?>" onsubmit="return confirm('Generate fresh download links and email them to the customer?');">
+                        <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>">
+                        <?php echo HTMLHelper::_('form.token'); ?>
+                        <button type="submit" class="btn btn-outline-info w-100">Reissue download links</button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
