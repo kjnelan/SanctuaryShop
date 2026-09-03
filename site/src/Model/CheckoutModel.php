@@ -184,32 +184,96 @@ class CheckoutModel extends BaseDatabaseModel
         $paymentId     = $result['payment']['id'];
         $squareOrderId = $result['payment']['order_id'] ?? null;
 
-        $update = (object) [
-            'id'              => $orderId,
-            'status'          => 'completed',
-            'payment_id'      => $paymentId,
-            'square_order_id' => $squareOrderId,
-            'modified'        => Factory::getDate()->toSql(),
-        ];
-        $db->updateObject('#__sanctuaryshop_orders', $update, 'id');
-
-        Factory::getApplication()->getSession()->set('sanctuaryshop.confirmation_order_id', $orderId);
-
-        // Clear cart
-        (new CartModel(['ignore_request' => true]))->clear();
-
-        // Generate download tokens for digital products
-        $this->generateDownloadTokens($orderId);
-
-        // Decrement stock for physical products
-        $this->decrementStock($orderId);
-
-        // Decrement coupon usage count
-        $this->decrementCouponUsage($orderId);
-
-        $this->sendOrderConfirmation($orderId, $order);
+        $this->finalizePaidOrder($orderId, $paymentId, $squareOrderId, $order);
 
         return $paymentId;
+    }
+
+    public function refundWithSquare(int $orderId): string
+    {
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $token = $params->get('square_access_token', '');
+        if (!$token) {
+            throw new \RuntimeException('Square is not configured.');
+        }
+
+        $db = $this->getDatabase();
+        $order = $db->setQuery(
+            $db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . (int) $orderId)
+        )->loadObject();
+        if (!$order || empty($order->payment_id)) {
+            throw new \RuntimeException('This order has no Square payment to refund.');
+        }
+        if ($order->status !== 'completed') {
+            throw new \RuntimeException('Only a completed order can be refunded.');
+        }
+        if (!empty($order->square_refund_id) || $order->status === 'refunded') {
+            return (string) ($order->square_refund_id ?: 'already-refunded');
+        }
+
+        $baseUrl = $params->get('square_environment', 'sandbox') === 'production'
+            ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
+        $payload = json_encode([
+            'idempotency_key' => 'ss-refund-' . hash('sha256', (string) $orderId),
+            'payment_id'      => $order->payment_id,
+            'amount_money'    => ['amount' => (int) round((float) $order->total * 100), 'currency' => $order->currency],
+            'reason'          => 'SanctuaryShop order #' . $orderId,
+        ]);
+        $ch = curl_init($baseUrl . '/v2/refunds');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => ['Square-Version: 2024-01-18', 'Authorization: Bearer ' . $token, 'Content-Type: application/json', 'Accept: application/json'],
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        $response = curl_exec($ch); $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); $curlErr = curl_error($ch); curl_close($ch);
+        if ($curlErr) {
+            throw new \RuntimeException('Network error contacting Square: ' . $curlErr);
+        }
+        $result = json_decode($response, true);
+        $refundId = $result['refund']['id'] ?? '';
+        if ($httpCode < 200 || $httpCode >= 300 || !$refundId) {
+            throw new \RuntimeException($result['errors'][0]['detail'] ?? ('HTTP ' . $httpCode));
+        }
+        $db->setQuery(
+            $db->getQuery(true)->update($db->quoteName('#__sanctuaryshop_orders'))
+                ->set('status = ' . $db->quote('refunded'))
+                ->set('square_refund_id = ' . $db->quote($refundId))
+                ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
+                ->where('id = ' . (int) $orderId)
+        )->execute();
+        return (string) $refundId;
+    }
+
+    public function finalizePaidOrder(int $orderId, string $paymentId, ?string $squareOrderId = null, ?object $knownOrder = null): void
+    {
+        $db = $this->getDatabase();
+        $order = $knownOrder ?: $db->setQuery($db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . (int) $orderId))->loadObject();
+        if (!$order) {
+            throw new \RuntimeException('Order not found.');
+        }
+        if ($order->status === 'completed' || $order->status === 'refunded') {
+            return;
+        }
+        // Make finalization idempotent even if the browser response and Square's
+        // webhook arrive at nearly the same time.
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__sanctuaryshop_orders'))
+            ->set('status = ' . $db->quote('completed'))
+            ->set('payment_id = ' . $db->quote($paymentId))
+            ->set('square_order_id = ' . ($squareOrderId ? $db->quote($squareOrderId) : 'NULL'))
+            ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
+            ->where('id = ' . (int) $orderId)
+            ->where('status = ' . $db->quote('pending'));
+        $db->setQuery($update)->execute();
+        if ($db->getAffectedRows() !== 1) {
+            return;
+        }
+        Factory::getApplication()->getSession()->set('sanctuaryshop.confirmation_order_id', $orderId);
+        (new CartModel(['ignore_request' => true]))->clear();
+        $this->generateDownloadTokens($orderId);
+        $this->decrementStock($orderId);
+        $this->decrementCouponUsage($orderId);
+        $this->sendOrderConfirmation($orderId, $order);
     }
 
     private function generateDownloadTokens(int $orderId): void

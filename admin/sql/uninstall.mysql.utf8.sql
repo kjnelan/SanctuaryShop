@@ -7,3 +7,4 @@ DROP TABLE IF EXISTS `#__sanctuaryshop_product_files`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_order_items`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_orders`;
 DROP TABLE IF EXISTS `#__sanctuaryshop_products`;
+DROP TABLE IF EXISTS `#__sanctuaryshop_webhook_events`;

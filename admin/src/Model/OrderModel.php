@@ -5,6 +5,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\AdminModel;
+use SanctuaryShop\Component\Sanctuaryshop\Site\Model\CheckoutModel;
 
 class OrderModel extends AdminModel
 {
@@ -63,6 +64,12 @@ class OrderModel extends AdminModel
             $this->setError($e->getMessage());
             return false;
         }
+    }
+
+    public function refundWithSquare(int $orderId): string
+    {
+        $checkout = new CheckoutModel;
+        return $checkout->refundWithSquare($orderId);
     }
 
     public function save($data)

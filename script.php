@@ -89,6 +89,7 @@ class Com_SanctuaryshopInstallerScript
                     `payment_method`   VARCHAR(50) NOT NULL DEFAULT 'square',
                     `payment_id`       VARCHAR(255) NULL DEFAULT NULL,
                     `square_order_id`  VARCHAR(255) NULL DEFAULT NULL,
+                    `square_refund_id` VARCHAR(255) NULL DEFAULT NULL,
                     `notes`            TEXT NULL,
                     `created`          DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
                     `modified`         DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00',
@@ -262,6 +263,19 @@ class Com_SanctuaryshopInstallerScript
         } catch (\Exception $e) {
             \Joomla\CMS\Factory::getApplication()->enqueueMessage(
                 'SanctuaryShop installer (tracking_number): ' . $e->getMessage(), 'warning'
+            );
+        }
+
+        // v1.4 — refund tracking and signed webhook deduplication
+        try {
+            $cols = $db->setQuery("SHOW COLUMNS FROM `{$prefix}sanctuaryshop_orders` LIKE 'square_refund_id'")->loadResult();
+            if (!$cols) {
+                $db->setQuery("ALTER TABLE `{$prefix}sanctuaryshop_orders` ADD COLUMN `square_refund_id` VARCHAR(255) NULL DEFAULT NULL AFTER `square_order_id`")->execute();
+            }
+            $db->setQuery("CREATE TABLE IF NOT EXISTS `{$prefix}sanctuaryshop_webhook_events` (`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `event_id` VARCHAR(255) NOT NULL, `event_type` VARCHAR(100) NOT NULL DEFAULT '', `payload` MEDIUMTEXT NULL, `received` DATETIME NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `idx_event_id` (`event_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci")->execute();
+        } catch (\Exception $e) {
+            \Joomla\CMS\Factory::getApplication()->enqueueMessage(
+                'SanctuaryShop installer (webhooks): ' . $e->getMessage(), 'warning'
             );
         }
     }

@@ -9,6 +9,7 @@
         <field name="square_access_token" type="password" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_ACCESS_TOKEN" class="form-control" />
         <field name="square_location_id" type="text" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_LOCATION_ID" class="form-control" />
         <field name="square_webhook_signature_key" type="password" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_KEY" class="form-control" />
+        <field name="square_webhook_url" type="url" label="COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_URL" class="form-control" hint="https://example.org/index.php?option=com_sanctuaryshop&amp;task=webhook.square" />
     </fieldset>
     <fieldset name="shop" label="COM_SANCTUARYSHOP_CONFIG_SHOP_LABEL">
         <field name="currency" type="text" label="COM_SANCTUARYSHOP_CONFIG_CURRENCY" default="USD" maxlength="3" class="form-control" />

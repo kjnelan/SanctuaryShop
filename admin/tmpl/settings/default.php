@@ -79,6 +79,8 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="square_webhook_signature_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_KEY'); ?></label>
                         <input type="password" class="form-control" id="square_webhook_signature_key" name="square_webhook_signature_key" value="<?php echo $this->escape($p->get('square_webhook_signature_key', '')); ?>" autocomplete="new-password">
+                        <label class="form-label fw-semibold mt-3" for="square_webhook_url"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_URL'); ?></label>
+                        <input type="url" class="form-control" id="square_webhook_url" name="square_webhook_url" value="<?php echo $this->escape($p->get('square_webhook_url', '')); ?>" placeholder="https://example.org/index.php?option=com_sanctuaryshop&amp;task=webhook.square">
                     </div>
                 </div>
             </div>

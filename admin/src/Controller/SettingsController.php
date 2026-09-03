@@ -34,6 +34,7 @@ class SettingsController extends BaseController
         $params->set('square_access_token',          $input->getString('square_access_token', ''));
         $params->set('square_location_id',           $input->getString('square_location_id', ''));
         $params->set('square_webhook_signature_key', $input->getString('square_webhook_signature_key', ''));
+        $params->set('square_webhook_url',             $input->getString('square_webhook_url', ''));
 
         // Shipping
         $params->set('shipping_flat_rate',      $input->getFloat('shipping_flat_rate', 0));

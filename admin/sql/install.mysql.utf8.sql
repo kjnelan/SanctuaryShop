@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `#__sanctuaryshop_orders` (
     `payment_method`   VARCHAR(50) NOT NULL DEFAULT 'square',
     `payment_id`       VARCHAR(255) DEFAULT NULL,
     `square_order_id`  VARCHAR(255) DEFAULT NULL,
+    `square_refund_id` VARCHAR(255) DEFAULT NULL,
     `notes`            TEXT,
     `created`          DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
     `modified`         DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
