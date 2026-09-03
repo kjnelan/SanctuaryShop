@@ -49,6 +49,13 @@ class OrderController extends FormController
         $model = $this->getModel('Order');
 
         try {
+            $order = $model->getItem($orderId);
+            if (!$order || !in_array((string) $order->payment_method, ['square', 'square_subscription'], true)) {
+                throw new \RuntimeException('Automatic refunds are not available for this payment provider yet. Use the provider dashboard.');
+            }
+            if ($order->payment_method === 'square_subscription') {
+                throw new \RuntimeException('Subscription refunds must be managed from the Square subscription record.');
+            }
             $refundId = $model->refundWithSquare($orderId, $amount > 0 ? $amount : null);
             $this->setMessage(Text::_('COM_SANCTUARYSHOP_REFUND_SUCCESS') . ' ' . $refundId, 'success');
         } catch (\Throwable $e) {
