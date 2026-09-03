@@ -72,60 +72,73 @@ $p = $this->params;
     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
     <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'payment', Text::_('COM_SANCTUARYSHOP_TAB_PAYMENT')); ?>
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-3">
-                <div class="card-header"><h3 class="card-title"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_LABEL'); ?></h3></div>
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-primary mb-1">
+                <div class="card-header bg-primary text-white"><h3 class="card-title mb-0"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PAYMENT_PROVIDER'); ?></h3></div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="payment_provider"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PAYMENT_PROVIDER'); ?></label>
-                        <select class="form-select" id="payment_provider" name="payment_provider">
-                            <?php foreach (['square' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_SQUARE'), 'stripe' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_STRIPE'), 'authorize_net' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_AUTHORIZE_NET')] as $value => $label) : ?>
-                                <option value="<?php echo $value; ?>"<?php echo $p->get('payment_provider', 'square') === $value ? ' selected' : ''; ?>><?php echo $label; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="form-text"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_NOTE'); ?></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="square_environment"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV'); ?></label>
-                        <select class="form-select" id="square_environment" name="square_environment">
-                            <option value="sandbox"<?php echo $p->get('square_environment', 'sandbox') === 'sandbox' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_SANDBOX'); ?></option>
-                            <option value="production"<?php echo $p->get('square_environment') === 'production' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_PRODUCTION'); ?></option>
-                        </select>
-                    </div>
-                    <hr>
-                    <h4><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_LABEL'); ?></h4>
-                    <div class="mb-3"><label class="form-label" for="stripe_publishable_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_PUBLISHABLE_KEY'); ?></label><input type="text" class="form-control" id="stripe_publishable_key" name="stripe_publishable_key" value="<?php echo $this->escape($p->get('stripe_publishable_key', '')); ?>"></div>
-                    <div class="mb-3"><label class="form-label" for="stripe_secret_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_SECRET_KEY'); ?></label><input type="password" class="form-control" id="stripe_secret_key" name="stripe_secret_key" value="<?php echo $this->escape($p->get('stripe_secret_key', '')); ?>" autocomplete="new-password"></div>
-                    <div class="mb-3"><label class="form-label" for="stripe_webhook_secret"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_WEBHOOK_SECRET'); ?></label><input type="password" class="form-control" id="stripe_webhook_secret" name="stripe_webhook_secret" value="<?php echo $this->escape($p->get('stripe_webhook_secret', '')); ?>" autocomplete="new-password"></div>
-                    <hr>
-                    <h4><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_LABEL'); ?></h4>
-                    <div class="mb-3"><label class="form-label" for="authorize_environment"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_ENV'); ?></label><select class="form-select" id="authorize_environment" name="authorize_environment"><option value="sandbox"<?php echo $p->get('authorize_environment', 'sandbox') === 'sandbox' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ENV_SANDBOX'); ?></option><option value="production"<?php echo $p->get('authorize_environment') === 'production' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ENV_PRODUCTION'); ?></option></select></div>
-                    <div class="mb-3"><label class="form-label" for="authorize_api_login_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_LOGIN'); ?></label><input type="text" class="form-control" id="authorize_api_login_id" name="authorize_api_login_id" value="<?php echo $this->escape($p->get('authorize_api_login_id', '')); ?>"></div>
-                    <div class="mb-3"><label class="form-label" for="authorize_transaction_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_TRANSACTION_KEY'); ?></label><input type="password" class="form-control" id="authorize_transaction_key" name="authorize_transaction_key" value="<?php echo $this->escape($p->get('authorize_transaction_key', '')); ?>" autocomplete="new-password"></div>
-                    <div class="mb-3"><label class="form-label" for="authorize_public_client_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_PUBLIC_KEY'); ?></label><input type="text" class="form-control" id="authorize_public_client_key" name="authorize_public_client_key" value="<?php echo $this->escape($p->get('authorize_public_client_key', '')); ?>"></div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="square_application_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_APP_ID'); ?></label>
-                        <input type="text" class="form-control" id="square_application_id" name="square_application_id" value="<?php echo $this->escape($p->get('square_application_id', '')); ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="square_access_token"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ACCESS_TOKEN'); ?></label>
-                        <input type="password" class="form-control" id="square_access_token" name="square_access_token" value="<?php echo $this->escape($p->get('square_access_token', '')); ?>" autocomplete="new-password">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="square_location_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_LOCATION_ID'); ?></label>
-                        <input type="text" class="form-control" id="square_location_id" name="square_location_id" value="<?php echo $this->escape($p->get('square_location_id', '')); ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="square_webhook_signature_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_KEY'); ?></label>
-                        <input type="password" class="form-control" id="square_webhook_signature_key" name="square_webhook_signature_key" value="<?php echo $this->escape($p->get('square_webhook_signature_key', '')); ?>" autocomplete="new-password">
-                        <label class="form-label fw-semibold mt-3" for="square_webhook_url"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_URL'); ?></label>
-                        <input type="url" class="form-control" id="square_webhook_url" name="square_webhook_url" value="<?php echo $this->escape($p->get('square_webhook_url', '')); ?>" placeholder="https://example.org/index.php?option=com_sanctuaryshop&amp;task=webhook.square">
+                    <div class="row align-items-end g-3">
+                        <div class="col-lg-6">
+                            <label class="form-label fw-semibold" for="payment_provider"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PAYMENT_PROVIDER'); ?></label>
+                            <select class="form-select" id="payment_provider" name="payment_provider" aria-describedby="payment-provider-note">
+                                <?php foreach (['square' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_SQUARE'), 'stripe' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_STRIPE'), 'authorize_net' => Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_AUTHORIZE_NET')] as $value => $label) : ?>
+                                    <option value="<?php echo $value; ?>"<?php echo $p->get('payment_provider', 'square') === $value ? ' selected' : ''; ?>><?php echo $label; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-lg-6"><div id="payment-provider-note" class="form-text mb-2"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PROVIDER_NOTE'); ?></div></div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="col-12" data-payment-provider-panel="square">
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_LABEL'); ?></h3></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_environment"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV'); ?></label><select class="form-select" id="square_environment" name="square_environment"><option value="sandbox"<?php echo $p->get('square_environment', 'sandbox') === 'sandbox' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_SANDBOX'); ?></option><option value="production"<?php echo $p->get('square_environment') === 'production' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ENV_PRODUCTION'); ?></option></select></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_application_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_APP_ID'); ?></label><input type="text" class="form-control" id="square_application_id" name="square_application_id" value="<?php echo $this->escape($p->get('square_application_id', '')); ?>" autocomplete="off"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_access_token"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_ACCESS_TOKEN'); ?></label><input type="password" class="form-control" id="square_access_token" name="square_access_token" value="<?php echo $this->escape($p->get('square_access_token', '')); ?>" autocomplete="new-password"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_location_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_LOCATION_ID'); ?></label><input type="text" class="form-control" id="square_location_id" name="square_location_id" value="<?php echo $this->escape($p->get('square_location_id', '')); ?>" autocomplete="off"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_webhook_signature_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_KEY'); ?></label><input type="password" class="form-control" id="square_webhook_signature_key" name="square_webhook_signature_key" value="<?php echo $this->escape($p->get('square_webhook_signature_key', '')); ?>" autocomplete="new-password"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="square_webhook_url"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SQUARE_WEBHOOK_URL'); ?></label><input type="url" class="form-control" id="square_webhook_url" name="square_webhook_url" value="<?php echo $this->escape($p->get('square_webhook_url', '')); ?>" placeholder="https://example.org/index.php?option=com_sanctuaryshop&amp;task=webhook.square"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" data-payment-provider-panel="stripe" hidden>
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_LABEL'); ?></h3></div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="stripe_publishable_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_PUBLISHABLE_KEY'); ?></label><input type="text" class="form-control" id="stripe_publishable_key" name="stripe_publishable_key" value="<?php echo $this->escape($p->get('stripe_publishable_key', '')); ?>" autocomplete="off"></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="stripe_secret_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_SECRET_KEY'); ?></label><input type="password" class="form-control" id="stripe_secret_key" name="stripe_secret_key" value="<?php echo $this->escape($p->get('stripe_secret_key', '')); ?>" autocomplete="new-password"></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="stripe_webhook_secret"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STRIPE_WEBHOOK_SECRET'); ?></label><input type="password" class="form-control" id="stripe_webhook_secret" name="stripe_webhook_secret" value="<?php echo $this->escape($p->get('stripe_webhook_secret', '')); ?>" autocomplete="new-password"></div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="col-12" data-payment-provider-panel="authorize_net" hidden>
+            <div class="card h-100">
+                <div class="card-header"><h3 class="card-title mb-0"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_LABEL'); ?></h3></div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="authorize_environment"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_ENV'); ?></label><select class="form-select" id="authorize_environment" name="authorize_environment"><option value="sandbox"<?php echo $p->get('authorize_environment', 'sandbox') === 'sandbox' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ENV_SANDBOX'); ?></option><option value="production"<?php echo $p->get('authorize_environment') === 'production' ? ' selected' : ''; ?>><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_ENV_PRODUCTION'); ?></option></select></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="authorize_api_login_id"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_LOGIN'); ?></label><input type="text" class="form-control" id="authorize_api_login_id" name="authorize_api_login_id" value="<?php echo $this->escape($p->get('authorize_api_login_id', '')); ?>" autocomplete="off"></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="authorize_transaction_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_TRANSACTION_KEY'); ?></label><input type="password" class="form-control" id="authorize_transaction_key" name="authorize_transaction_key" value="<?php echo $this->escape($p->get('authorize_transaction_key', '')); ?>" autocomplete="new-password"></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold" for="authorize_public_client_key"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_AUTHORIZE_PUBLIC_KEY'); ?></label><input type="text" class="form-control" id="authorize_public_client_key" name="authorize_public_client_key" value="<?php echo $this->escape($p->get('authorize_public_client_key', '')); ?>" autocomplete="off"></div>
+                </div></div>
+            </div>
+        </div>
     </div>
+    <script>
+    (() => {
+        const selector = document.getElementById('payment_provider');
+        const panels = document.querySelectorAll('[data-payment-provider-panel]');
+        const updatePanels = () => panels.forEach((panel) => { panel.hidden = panel.dataset.paymentProviderPanel !== selector.value; });
+        if (selector) { selector.addEventListener('change', updatePanels); updatePanels(); }
+    })();
+    </script>
     <?php echo HTMLHelper::_('uitab.endTab'); ?>
 
     <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'shipping', Text::_('COM_SANCTUARYSHOP_TAB_SHIPPING')); ?>

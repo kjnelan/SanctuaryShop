@@ -15,7 +15,7 @@ use Joomla\CMS\Router\Route;
             <div id="help-getting-started" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
                 <div class="accordion-body">
                     <ol>
-                        <li><strong>Configure the shop:</strong> Click <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=settings'); ?>">Settings</a> in the submenu to set your shop name, currency, tax rate, Square payment credentials, shipping rates, and download settings.</li>
+                        <li><strong>Configure the shop:</strong> Click <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=settings'); ?>">Settings</a> in the submenu to set your shop name, currency, payment provider credentials, shipping rates, and download settings.</li>
                         <li><strong>Create your first product:</strong> Go to Products → New. Choose a product type (Physical, Digital, Service, or Subscription), enter a title, price, and description. For digital products, add downloadable files. Save the product.</li>
                         <li><strong>Set up a menu item:</strong> In Joomla's menu manager, create a new menu item. Select SanctuaryShop as the component. You can link to the Products list view, a single Product view, or the Cart/Checkout views.</li>
                     </ol>
