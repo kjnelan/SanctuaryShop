@@ -64,4 +64,14 @@ class DashboardModel extends BaseDatabaseModel
             ->order('total_revenue DESC');
         return $db->setQuery($query, 0, $limit)->loadObjectList() ?: [];
     }
+
+    public function getLowStock(): array
+    {
+        $threshold = (int) \Joomla\CMS\Component\ComponentHelper::getParams('com_sanctuaryshop')->get('low_stock_threshold', 5);
+        $db = $this->getDatabase();
+        return $db->setQuery(
+            $db->getQuery(true)->select(['id', 'title', 'sku', 'stock'])->from($db->quoteName('#__sanctuaryshop_products'))
+                ->where('state = 1')->where("product_type = 'physical'")->where('stock <= ' . $threshold)->order('stock ASC, title ASC')
+        )->loadObjectList() ?: [];
+    }
 }

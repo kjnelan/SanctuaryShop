@@ -49,6 +49,10 @@ $p = $this->params;
                         <label class="form-label fw-semibold" for="pending_order_expiry_minutes"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY'); ?></label>
                         <input type="number" class="form-control" id="pending_order_expiry_minutes" name="pending_order_expiry_minutes" value="<?php echo (int) $p->get('pending_order_expiry_minutes', 60); ?>" min="15" max="10080">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="low_stock_threshold"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_LOW_STOCK'); ?></label>
+                        <input type="number" class="form-control" id="low_stock_threshold" name="low_stock_threshold" value="<?php echo (int) $p->get('low_stock_threshold', 5); ?>" min="0">
+                    </div>
                 </div>
             </div>
         </div>

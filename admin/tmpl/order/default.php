@@ -104,6 +104,13 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                         <dd class="col-6"><?php echo $this->escape($this->item->coupon_code); ?></dd>
                         <?php endif; ?>
                     </dl>
+                    <?php if (!empty($this->refunds)) : ?>
+                    <hr>
+                    <div class="small fw-semibold">Refund history</div>
+                    <?php foreach ($this->refunds as $refund) : ?>
+                        <div class="small text-muted"><?php echo $this->escape($refund->currency); ?> <?php echo number_format($refund->amount, 2); ?> — <?php echo HTMLHelper::_('date', $refund->created, 'Y-m-d H:i'); ?></div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
             <!-- Quick Status Actions -->
@@ -136,6 +143,7 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
                     <form method="post" action="<?php echo Route::_('index.php?option=com_sanctuaryshop&task=order.refund'); ?>"
                           onsubmit="return confirm('<?php echo Text::_('COM_SANCTUARYSHOP_CONFIRM_REFUND', true); ?>');">
                         <input type="hidden" name="id" value="<?php echo (int) $this->item->id; ?>">
+                        <input type="number" name="refund_amount" class="form-control form-control-sm mb-2" min="0.01" max="<?php echo (float) $this->item->total; ?>" step="0.01" placeholder="Full remaining amount">
                         <?php echo HTMLHelper::_('form.token'); ?>
                         <button type="submit" class="btn btn-outline-danger w-100"><?php echo Text::_('COM_SANCTUARYSHOP_REFUND'); ?></button>
                     </form>

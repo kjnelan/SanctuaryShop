@@ -15,6 +15,7 @@ class HtmlView extends BaseHtmlView
     protected $item;
     protected $orderItems;
     protected $state;
+    protected $refunds;
 
     public function display($tpl = null): void
     {
@@ -22,6 +23,7 @@ class HtmlView extends BaseHtmlView
         $this->item       = $this->get('Item');
         $this->state      = $this->get('State');
         $this->orderItems = $this->getModel()->getOrderItems((int) $this->item->id);
+        $this->refunds     = $this->getModel()->getRefunds((int) $this->item->id);
 
         if (count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);

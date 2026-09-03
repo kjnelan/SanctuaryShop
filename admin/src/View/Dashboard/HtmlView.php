@@ -15,6 +15,7 @@ class HtmlView extends BaseHtmlView
     public $recentOrders;
     public $topProducts;
     public $currency;
+    public $lowStock;
 
     public function display($tpl = null): void
     {
@@ -22,6 +23,7 @@ class HtmlView extends BaseHtmlView
         $this->totals      = $model->getTotals();
         $this->recentOrders = $model->getRecentOrders();
         $this->topProducts = $model->getTopProducts();
+        $this->lowStock    = $model->getLowStock();
         $this->currency    = strtoupper(ComponentHelper::getParams('com_sanctuaryshop')->get('currency', 'USD'));
 
         ToolbarHelper::title(Text::_('COM_SANCTUARYSHOP_DASHBOARD'), 'dashboard');

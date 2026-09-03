@@ -46,6 +46,18 @@ $sym         = $currencyMap[$this->currency] ?? $this->currency . ' ';
     </div>
 
     <div class="row g-4">
+        <?php if (!empty($this->lowStock)) : ?>
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header text-warning fw-semibold">Low-stock products</div>
+                <div class="card-body py-2"><div class="row">
+                    <?php foreach ($this->lowStock as $product) : ?>
+                    <div class="col-md-4 small mb-1"><?php echo $this->escape($product->title); ?> — <strong><?php echo (int) $product->stock; ?></strong></div>
+                    <?php endforeach; ?>
+                </div></div>
+            </div>
+        </div>
+        <?php endif; ?>
         <!-- Recent orders -->
         <div class="col-lg-6">
             <div class="card h-100">

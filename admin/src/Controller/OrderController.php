@@ -45,10 +45,11 @@ class OrderController extends FormController
     {
         Session::checkToken() or jexit('Invalid Token');
         $orderId = $this->input->getInt('id');
+        $amount = $this->input->getFloat('refund_amount', 0);
         $model = $this->getModel('Order');
 
         try {
-            $refundId = $model->refundWithSquare($orderId);
+            $refundId = $model->refundWithSquare($orderId, $amount > 0 ? $amount : null);
             $this->setMessage(Text::_('COM_SANCTUARYSHOP_REFUND_SUCCESS') . ' ' . $refundId, 'success');
         } catch (\Throwable $e) {
             $this->setMessage(Text::_('COM_SANCTUARYSHOP_REFUND_FAILED') . ' ' . $e->getMessage(), 'error');

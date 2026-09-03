@@ -7,8 +7,8 @@
     <creationDate>2026-06-09</creationDate>
     <copyright>Copyright (C) 2026 Sacred Wandering, Inc. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.5.0</version>
-    <schemaversion>1.5.0</schemaversion>
+    <version>1.6.0</version>
+    <schemaversion>1.6.0</schemaversion>
     <scriptfile>script.php</scriptfile>
     <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
 

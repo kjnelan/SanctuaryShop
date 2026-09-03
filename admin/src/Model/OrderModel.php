@@ -66,10 +66,17 @@ class OrderModel extends AdminModel
         }
     }
 
-    public function refundWithSquare(int $orderId): string
+    public function refundWithSquare(int $orderId, ?float $amount = null): string
     {
         $checkout = new CheckoutModel;
-        return $checkout->refundWithSquare($orderId);
+        return $checkout->refundWithSquare($orderId, $amount);
+    }
+
+    public function getRefunds(int $orderId): array
+    {
+        return $this->getDatabase()->setQuery(
+            $this->getDatabase()->getQuery(true)->select('*')->from($this->getDatabase()->quoteName('#__sanctuaryshop_refunds'))->where('order_id = ' . (int) $orderId)->order('id DESC')
+        )->loadObjectList() ?: [];
     }
 
     public function save($data)

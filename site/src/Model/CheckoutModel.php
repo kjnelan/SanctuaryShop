@@ -193,7 +193,7 @@ class CheckoutModel extends BaseDatabaseModel
         return $paymentId;
     }
 
-    public function refundWithSquare(int $orderId): string
+    public function refundWithSquare(int $orderId, ?float $requestedAmount = null): string
     {
         $params = ComponentHelper::getParams('com_sanctuaryshop');
         $token = $params->get('square_access_token', '');
@@ -211,16 +211,23 @@ class CheckoutModel extends BaseDatabaseModel
         if ($order->status !== 'completed') {
             throw new \RuntimeException('Only a completed order can be refunded.');
         }
-        if (!empty($order->square_refund_id) || $order->status === 'refunded') {
-            return (string) ($order->square_refund_id ?: 'already-refunded');
+
+        $refunded = (float) $db->setQuery(
+            $db->getQuery(true)->select('COALESCE(SUM(amount), 0)')->from($db->quoteName('#__sanctuaryshop_refunds'))
+                ->where('order_id = ' . (int) $orderId)->where('status = ' . $db->quote('COMPLETED'))
+        )->loadResult();
+        $remaining = round((float) $order->total - $refunded, 2);
+        $amount = $requestedAmount === null ? $remaining : round($requestedAmount, 2);
+        if ($amount <= 0 || $amount > $remaining) {
+            throw new \RuntimeException('Refund amount must be greater than zero and no more than the remaining balance of ' . $order->currency . ' ' . number_format($remaining, 2) . '.');
         }
 
         $baseUrl = $params->get('square_environment', 'sandbox') === 'production'
             ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
         $payload = json_encode([
-            'idempotency_key' => 'ss-refund-' . hash('sha256', (string) $orderId),
+            'idempotency_key' => 'ss-refund-' . hash('sha256', $orderId . '|' . number_format($amount, 2, '.', '')),
             'payment_id'      => $order->payment_id,
-            'amount_money'    => ['amount' => (int) round((float) $order->total * 100), 'currency' => $order->currency],
+            'amount_money'    => ['amount' => (int) round($amount * 100), 'currency' => $order->currency],
             'reason'          => 'SanctuaryShop order #' . $orderId,
         ]);
         $ch = curl_init($baseUrl . '/v2/refunds');
@@ -238,13 +245,19 @@ class CheckoutModel extends BaseDatabaseModel
         if ($httpCode < 200 || $httpCode >= 300 || !$refundId) {
             throw new \RuntimeException($result['errors'][0]['detail'] ?? ('HTTP ' . $httpCode));
         }
-        $db->setQuery(
-            $db->getQuery(true)->update($db->quoteName('#__sanctuaryshop_orders'))
-                ->set('status = ' . $db->quote('refunded'))
-                ->set('square_refund_id = ' . $db->quote($refundId))
-                ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
-                ->where('id = ' . (int) $orderId)
-        )->execute();
+        $db->insertObject('#__sanctuaryshop_refunds', (object) [
+            'order_id' => $orderId, 'square_refund_id' => $refundId, 'amount' => $amount,
+            'currency' => $order->currency, 'status' => 'COMPLETED', 'created' => Factory::getDate()->toSql(),
+        ]);
+        if ($amount >= $remaining) {
+            $db->setQuery(
+                $db->getQuery(true)->update($db->quoteName('#__sanctuaryshop_orders'))
+                    ->set('status = ' . $db->quote('refunded'))
+                    ->set('square_refund_id = ' . $db->quote($refundId))
+                    ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
+                    ->where('id = ' . (int) $orderId)
+            )->execute();
+        }
         return (string) $refundId;
     }
 
