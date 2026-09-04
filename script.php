@@ -84,7 +84,6 @@ class Com_SanctuaryshopInstallerScript
                     `tax`              DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `shipping`         DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `shipping_method`  VARCHAR(100) NOT NULL DEFAULT 'standard',
-                    `shipping_method`  VARCHAR(100) NOT NULL DEFAULT 'standard',
                     `total`            DECIMAL(10,2) NOT NULL DEFAULT '0.00',
                     `currency`         VARCHAR(10) NOT NULL DEFAULT 'USD',
                     `billing_name`     VARCHAR(255) NOT NULL DEFAULT '',

@@ -6,6 +6,7 @@
     <version>1.0.0</version>
     <description>SanctuaryShop mini cart module — shows cart item count with a dropdown summary.</description>
     <files>
+        <folder>src</folder>
         <filename module="mod_sanctuaryshop_cart">mod_sanctuaryshop_cart.php</filename>
         <folder>tmpl</folder>
     </files>

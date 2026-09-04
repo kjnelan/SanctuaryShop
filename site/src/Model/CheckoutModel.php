@@ -283,13 +283,13 @@ class CheckoutModel extends BaseDatabaseModel
         $secret = trim((string) $params->get('stripe_secret_key', ''));
         if ($secret === '' || !str_starts_with($secret, 'sk_')) throw new \RuntimeException('Stripe is not configured.');
         $order = $this->getPendingOrder($orderId);
-        if ((string) $order->payment_method !== 'authorize_net') throw new \RuntimeException('This order is assigned to a different payment provider.');
+        if ((string) $order->payment_method !== 'stripe') throw new \RuntimeException('This order is assigned to a different payment provider.');
         if ($this->getSubscriptionPlanForOrder($orderId)) throw new \RuntimeException('Subscription products currently require Square payment processing.');
         $body = http_build_query(['amount'=>(int)round((float)$order->total*100),'currency'=>strtolower((string)$order->currency),'receipt_email'=>$order->billing_email,'description'=>'SanctuaryShop Order #'.$orderId,'metadata[order_id]'=>$orderId,'automatic_payment_methods[enabled]'=>'true']);
         $ch=curl_init('https://api.stripe.com/v1/payment_intents');curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$body,CURLOPT_HTTPHEADER=>['Authorization: Bearer '.$secret,'Content-Type: application/x-www-form-urlencoded','Idempotency-Key'=>'ss-intent-'.hash('sha256',(string)$orderId)],CURLOPT_TIMEOUT=>30]);$response=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);$error=curl_error($ch);curl_close($ch);$result=json_decode((string)$response,true)?:[];if($error||$code<200||$code>=300)throw new \RuntimeException($error?:($result['error']['message']??'Stripe could not create the payment.'));if(empty($result['id'])||empty($result['client_secret']))throw new \RuntimeException('Stripe returned an incomplete payment intent.');return ['client_secret'=>$result['client_secret'],'payment_intent'=>$result['id']];
     }
 
-    /** Charge an Authorize.Net Accept.js opaque payment nonce. */
+    /** Confirm a Stripe PaymentIntent after client-side card authentication. */
     public function completeStripePayment(int $orderId, string $paymentIntentId): string
     {
         $params = ComponentHelper::getParams('com_sanctuaryshop'); $secret = trim((string) $params->get('stripe_secret_key', ''));
@@ -310,7 +310,7 @@ class CheckoutModel extends BaseDatabaseModel
         if ($login === '' || $key === '') throw new \RuntimeException('Authorize.Net is not configured.');
         if ($dataDescriptor === '' || $dataValue === '') throw new \RuntimeException('Invalid Authorize.Net payment nonce.');
         $order = $this->getPendingOrder($orderId);
-        if ((string) $order->payment_method !== 'stripe') throw new \RuntimeException('This order is assigned to a different payment provider.');
+        if ((string) $order->payment_method !== 'authorize_net') throw new \RuntimeException('This order is assigned to a different payment provider.');
         if ($this->getSubscriptionPlanForOrder($orderId)) {
             throw new \RuntimeException('Subscription products currently require Square payment processing.');
         }
@@ -519,22 +519,34 @@ class CheckoutModel extends BaseDatabaseModel
         }
         // Make finalization idempotent even if the browser response and Square's
         // webhook arrive at nearly the same time.
-        $update = $db->getQuery(true)
-            ->update($db->quoteName('#__sanctuaryshop_orders'))
-            ->set('status = ' . $db->quote('completed'))
-            ->set('payment_id = ' . $db->quote($paymentId))
-            ->set('square_order_id = ' . ($squareOrderId ? $db->quote($squareOrderId) : 'NULL'))
-            ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
-            ->where('id = ' . (int) $orderId)
-            ->where('status = ' . $db->quote('pending'));
-        $db->setQuery($update)->execute();
-        if ($db->getAffectedRows() !== 1) {
-            return;
+        $db->transactionStart();
+        try {
+            $this->decrementStock($orderId);
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__sanctuaryshop_orders'))
+                ->set('status = ' . $db->quote('completed'))
+                ->set('payment_id = ' . $db->quote($paymentId))
+                ->set('square_order_id = ' . ($squareOrderId ? $db->quote($squareOrderId) : 'NULL'))
+                ->set('modified = ' . $db->quote(Factory::getDate()->toSql()))
+                ->where('id = ' . (int) $orderId)
+                ->where('status = ' . $db->quote('pending'));
+            $db->setQuery($update)->execute();
+            if ($db->getAffectedRows() !== 1) {
+                $db->transactionRollback();
+                return;
+            }
+            $db->transactionCommit();
+        } catch (\Throwable $e) {
+            try {
+                $db->transactionRollback();
+            } catch (\Throwable $rollbackError) {
+                // Preserve the original inventory/finalization failure.
+            }
+            throw $e;
         }
         Factory::getApplication()->getSession()->set('sanctuaryshop.confirmation_order_id', $orderId);
         (new CartModel(['ignore_request' => true]))->clear();
         $this->generateDownloadTokens($orderId);
-        $this->decrementStock($orderId);
         $this->decrementCouponUsage($orderId);
         $this->sendOrderConfirmation($orderId, $order);
     }
@@ -636,7 +648,7 @@ class CheckoutModel extends BaseDatabaseModel
                 }
             }
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage('Inventory update failed for order #' . $orderId . ': ' . $e->getMessage(), 'error');
+            throw $e;
         }
     }
 

@@ -12,6 +12,7 @@ $statusMap = ['pending' => 'secondary', 'processing' => 'primary', 'completed' =
 $badge     = $statusMap[$this->order->status] ?? 'secondary';
 ?>
 <div class="com-sanctuaryshop-order">
+    <div class="no-print text-end mb-3"><button type="button" class="btn btn-outline-primary" onclick="window.print()">Print receipt</button></div>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <?php echo Text::_('COM_SANCTUARYSHOP_ORDER'); ?> #<?php echo str_pad((int) $this->order->id, 5, '0', STR_PAD_LEFT); ?>

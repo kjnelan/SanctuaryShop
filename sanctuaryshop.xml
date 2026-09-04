@@ -7,7 +7,7 @@
     <creationDate>2026-06-09</creationDate>
     <copyright>Copyright (C) 2026 Sacred Wandering, Inc. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.9.3</version>
+    <version>1.9.4</version>
     <schemaversion>1.9.3</schemaversion>
     <scriptfile>script.php</scriptfile>
     <description>COM_SANCTUARYSHOP_DESCRIPTION</description>
@@ -49,9 +49,11 @@
     <administration>
         <menu link="option=com_sanctuaryshop">COM_SANCTUARYSHOP</menu>
         <submenu>
+            <menu link="option=com_sanctuaryshop&amp;view=dashboard">COM_SANCTUARYSHOP_DASHBOARD</menu>
             <menu link="option=com_sanctuaryshop&amp;view=products">COM_SANCTUARYSHOP_PRODUCTS</menu>
             <menu link="option=com_categories&amp;extension=com_sanctuaryshop&amp;view=categories">COM_SANCTUARYSHOP_CATEGORIES</menu>
             <menu link="option=com_sanctuaryshop&amp;view=orders">COM_SANCTUARYSHOP_ORDERS</menu>
+            <menu link="option=com_sanctuaryshop&amp;view=reports">COM_SANCTUARYSHOP_REPORTS</menu>
             <menu link="option=com_sanctuaryshop&amp;view=downloads">COM_SANCTUARYSHOP_DOWNLOADS</menu>
             <menu link="option=com_sanctuaryshop&amp;view=coupons">COM_SANCTUARYSHOP_COUPONS</menu>
             <menu link="option=com_sanctuaryshop&amp;view=settings">COM_SANCTUARYSHOP_SETTINGS</menu>
@@ -73,8 +75,4 @@
         </languages>
     </administration>
 
-    <changelogurl>https://example.com/changelog.xml</changelogurl>
-    <updateservers>
-        <server type="extension" name="SanctuaryShop Updates">https://example.com/updates.xml</server>
-    </updateservers>
 </extension>

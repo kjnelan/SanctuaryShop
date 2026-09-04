@@ -11,6 +11,7 @@ $sym         = $currencyMap[$this->item->currency] ?? $this->item->currency . ' 
       method="post" name="adminForm" id="adminForm">
     <div class="row">
         <div class="col-lg-8">
+            <div class="no-print mb-3"><button type="button" class="btn btn-outline-primary" onclick="window.print()">Print receipt</button></div>
             <div class="card mb-3">
                 <div class="card-header"><h3 class="card-title">Order Items</h3></div>
                 <div class="card-body p-0">

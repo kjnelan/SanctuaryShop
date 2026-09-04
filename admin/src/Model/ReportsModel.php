@@ -1,0 +1,10 @@
+<?php
+namespace SanctuaryShop\Component\Sanctuaryshop\Administrator\Model;
+defined('_JEXEC') or die;
+use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+class ReportsModel extends BaseDatabaseModel {
+ private function where(string $from,string $to,string $status=''): string { $db=$this->getDatabase();$w=[];if(preg_match('/^\d{4}-\d{2}-\d{2}$/',$from))$w[]=$db->quoteName('o.created').' >= '.$db->quote($from.' 00:00:00');if(preg_match('/^\d{4}-\d{2}-\d{2}$/',$to))$w[]=$db->quoteName('o.created').' <= '.$db->quote($to.' 23:59:59');if($status!=='')$w[]=$db->quoteName('o.status').' = '.$db->quote($status);return implode(' AND ',$w);}
+ public function summary(string $from,string $to,string $status=''): object {$db=$this->getDatabase();$q=$db->getQuery(true)->select(['COUNT(*) orders','COALESCE(SUM(o.total),0) revenue','COALESCE(SUM(o.tax),0) tax','COALESCE(SUM(o.shipping),0) shipping'])->from($db->quoteName('#__sanctuaryshop_orders','o'));if($w=$this->where($from,$to,$status))$q->where($w);return $db->setQuery($q)->loadObject() ?: (object)[];}
+ public function grouped(string $field,string $from,string $to): array {$db=$this->getDatabase();$q=$db->getQuery(true)->select([$field.' value','COUNT(*) orders','SUM(o.total) revenue'])->from($db->quoteName('#__sanctuaryshop_orders','o'))->group($field)->order('revenue DESC');if($w=$this->where($from,$to))$q->where($w);return $db->setQuery($q)->loadObjectList() ?: [];}
+ public function products(string $from,string $to): array {$db=$this->getDatabase();$q=$db->getQuery(true)->select(['i.title','SUM(i.quantity) quantity','SUM(i.total_price) revenue'])->from($db->quoteName('#__sanctuaryshop_order_items','i'))->join('INNER',$db->quoteName('#__sanctuaryshop_orders','o').' ON o.id=i.order_id')->where($this->where($from,$to,'completed'))->group('i.title')->order('revenue DESC');return $db->setQuery($q,0,10)->loadObjectList() ?: [];}
+}
