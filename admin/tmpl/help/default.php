@@ -37,9 +37,9 @@ use Joomla\CMS\Router\Route;
                         <dt>Digital Download</dt>
                         <dd>A file the customer downloads after purchase. You attach files (relative paths from your Download Files Path). After checkout, secure download tokens are generated automatically. No shipping cost is added. Shows a "Buy Now" button that skips the cart.</dd>
                         <dt>Service / Appointment</dt>
-                        <dd>A bookable service or appointment. No physical delivery, no files. Stock can track available slots.</dd>
+                        <dd>A non-shipping service product. SanctuaryShop does not provide appointment scheduling. No physical delivery, no files. Stock can track available slots.</dd>
                         <dt>Subscription / Membership</dt>
-                        <dd>A recurring product type. Currently treated like a service — no physical shipping, no automatic file delivery. Use for membership access products.</dd>
+                        <dd>A subscription product supported through the configured payment provider where applicable. It does not provide provider-independent membership access or automatic file delivery.</dd>
                     </dl>
                 </div>
             </div>
@@ -84,6 +84,22 @@ use Joomla\CMS\Router\Route;
             </div>
         </div>
 
+
+        <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-dashboard">Dashboard &amp; Reports</button></h2>
+            <div id="help-dashboard" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">
+                <p>The <strong>Dashboard</strong> is the first SanctuaryShop submenu item. It shows revenue, order counts, pending orders, active products, recent orders, top products, and low-stock alerts.</p>
+                <p>Use <strong>Reports</strong> for a date-range report. You can filter by order status and review totals, orders by status, sales by payment provider, and top completed products. The Orders page also provides a detailed CSV export.</p>
+            </div></div>
+        </div>
+
+        <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-receipts">Receipts &amp; confirmations</button></h2>
+            <div id="help-receipts" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">
+                <p>After successful payment, the customer may receive an order-confirmation email if customer confirmations are enabled. The email contains the order details and any download links.</p>
+                <p>The customers order page includes <strong>Print receipt</strong>. Receipt title, footer, logo URL, and accent color can be configured in Settings. The printed receipt is a presentation of the order record; it is not a separate accounting or tax-invoice system.</p>
+            </div></div>
+        </div>
         <div class="accordion-item">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-downloads">
@@ -135,7 +151,7 @@ use Joomla\CMS\Router\Route;
                         <li><strong>Shipped</strong> — Physical order dispatched. Add a tracking number in the sidebar.</li>
                         <li><strong>Completed</strong> — Order fulfilled.</li>
                         <li><strong>Cancelled</strong> — Order cancelled.</li>
-                        <li><strong>Refunded</strong> — Payment refunded (manual refund via Square dashboard).</li>
+                        <li><strong>Refunded</strong> — Payment refunded; automatic refunds are currently available only for eligible Square orders. Manage other providers through their dashboards.</li>
                     </ul>
                     <p>Use the quick-action buttons (<em>Mark Processing, Mark Shipped, Mark Completed, Mark Cancelled</em>) in the order sidebar for fast status updates. Enter a tracking number when marking as shipped.</p>
                     <p>Add internal <strong>notes</strong> to any order — these are not visible to customers.</p>
@@ -143,6 +159,14 @@ use Joomla\CMS\Router\Route;
             </div>
         </div>
 
+
+        <div class="accordion-item">
+            <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-stripe">Stripe Setup</button></h2>
+            <div id="help-stripe" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">
+                <ol><li>Choose <strong>Stripe</strong> in Settings � Payment.</li><li>Enter the publishable key and secret key from your Stripe account. Use test keys while testing.</li><li>Stripe PaymentIntents are confirmed during checkout and Stripe can send its own receipt email when configured in Stripe.</li></ol>
+                <p>The current extension completes Stripe payments through checkout. Stripe webhook processing, automatic Stripe refunds, and subscription lifecycle synchronization are not included yet.</p>
+            </div></div>
+        </div>
         <div class="accordion-item">
             <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-square">
