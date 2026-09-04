@@ -48,6 +48,7 @@ $manifest = source('sanctuaryshop.xml');
 check(str_contains($checkout, "!== 'stripe'") && str_contains($checkout, "!== 'authorize_net'"), 'provider-specific order checks are present');
 check(str_contains($controller, 'Session::checkToken()') && substr_count($controller, 'Session::checkToken(\'get\')') >= 3, 'checkout endpoints require CSRF tokens');
 check(str_contains($webhook, 'hash_equals') && str_contains($webhook, 'INSERT IGNORE') && str_contains($webhook, 'finalizePaidOrder'), 'Square webhook verifies, deduplicates, and finalizes');
+check(str_contains($webhook, 'payment_intent.succeeded') && str_contains($webhook, 'verifyStripeSignature') && str_contains($webhook, 'amount_received'), 'Stripe webhook verifies and matches the order');
 
 // Inventory atomicity regression checks.
 $finalizeStart = strpos($checkout, 'public function finalizePaidOrder');

@@ -73,4 +73,73 @@ class WebhookController extends BaseController
         echo json_encode(['received' => true]);
         $app->close();
     }
+    public function stripe(): void
+    {
+        $app = Factory::getApplication();
+        $raw = file_get_contents('php://input') ?: '';
+        $params = ComponentHelper::getParams('com_sanctuaryshop');
+        $secret = trim((string) $params->get('stripe_webhook_secret', ''));
+        $header = (string) ($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '');
+        if (!$secret || !$this->verifyStripeSignature($raw, $header, $secret)) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid signature']);
+            $app->close();
+        }
+
+        $event = json_decode($raw, true);
+        $eventId = (string) ($event['id'] ?? '');
+        if ($eventId === '') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing event id']);
+            $app->close();
+        }
+
+        $checkout = new CheckoutModel;
+        $db = $checkout->getDatabase();
+        $db->setQuery(
+            'INSERT IGNORE INTO ' . $db->quoteName('#__sanctuaryshop_webhook_events')
+            . ' (event_id, event_type, payload, received) VALUES ('
+            . $db->quote($eventId) . ', ' . $db->quote((string) ($event['type'] ?? ''))
+            . ', ' . $db->quote($raw) . ', ' . $db->quote(Factory::getDate()->toSql()) . ')'
+        )->execute();
+        if ($db->getAffectedRows() === 0) {
+            echo json_encode(['received' => true, 'duplicate' => true]);
+            $app->close();
+        }
+
+        if (($event['type'] ?? '') === 'payment_intent.succeeded') {
+            $intent = $event['data']['object'] ?? [];
+            $orderId = (int) ($intent['metadata']['order_id'] ?? 0);
+            $paymentId = (string) ($intent['id'] ?? '');
+            $order = $orderId > 0
+                ? $db->setQuery($db->getQuery(true)->select('*')->from($db->quoteName('#__sanctuaryshop_orders'))->where('id = ' . $orderId))->loadObject()
+                : null;
+            $expectedCents = $order ? (int) round((float) $order->total * 100) : -1;
+            $actualCents = (int) ($intent['amount_received'] ?? $intent['amount'] ?? -1);
+            $currencyMatches = $order && strtolower((string) ($intent['currency'] ?? '')) === strtolower((string) $order->currency);
+            if ($order && $order->status === 'pending' && $order->payment_method === 'stripe'
+                && $paymentId !== '' && $actualCents === $expectedCents && $currencyMatches) {
+                $checkout->finalizePaidOrder($orderId, $paymentId, null, $order);
+            }
+        }
+
+        echo json_encode(['received' => true]);
+        $app->close();
+    }
+
+    private function verifyStripeSignature(string $body, string $header, string $secret): bool
+    {
+        $timestamp = '';
+        $signature = '';
+        foreach (explode(',', $header) as $part) {
+            [$key, $value] = array_pad(explode('=', trim($part), 2), 2, '');
+            if ($key === 't') $timestamp = $value;
+            if ($key === 'v1' && $signature === '') $signature = $value;
+        }
+        if ($timestamp === '' || $signature === '' || !ctype_digit($timestamp) || abs(time() - (int) $timestamp) > 300) {
+            return false;
+        }
+        return hash_equals(hash_hmac('sha256', $timestamp . '.' . $body, $secret), $signature);
+    }
+
 }

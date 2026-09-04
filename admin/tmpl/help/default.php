@@ -164,7 +164,7 @@ use Joomla\CMS\Router\Route;
             <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help-stripe">Stripe Setup</button></h2>
             <div id="help-stripe" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">
                 <ol><li>Choose <strong>Stripe</strong> in Settings ’ Payment.</li><li>Enter the publishable key and secret key from your Stripe account. Use test keys while testing.</li><li>Stripe PaymentIntents are confirmed during checkout and Stripe can send its own receipt email when configured in Stripe.</li></ol>
-                <p>The current extension completes Stripe payments through checkout. Stripe webhook processing, automatic Stripe refunds, and subscription lifecycle synchronization are not included yet.</p>
+                <p>The current extension completes Stripe payments through checkout. Configure Stripe to send <code>payment_intent.succeeded</code> events to <code>index.php?option=com_sanctuaryshop&amp;task=webhook.stripe</code> and enter the signing secret in Settings. The webhook verifies the signature and order amount before completing an order. Automatic Stripe refunds and subscription lifecycle synchronization are not included yet.</p>
             </div></div>
         </div>
         <div class="accordion-item">
