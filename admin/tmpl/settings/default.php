@@ -26,7 +26,6 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="shop_tagline"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_SHOP_TAGLINE'); ?></label>
                         <input type="text" class="form-control" id="shop_tagline" name="shop_tagline" value="<?php echo $this->escape($p->get('shop_tagline', '')); ?>">
-                    <div class="row g-3 mb-3"><div class="col-md-6"><label class="form-label fw-semibold" for="receipt_title">Receipt title</label><input type="text" class="form-control" id="receipt_title" name="receipt_title" value="<?php echo $this->escape($p->get("receipt_title", "Receipt")); ?>"></div><div class="col-md-6"><label class="form-label fw-semibold" for="receipt_color">Receipt accent color</label><input type="color" class="form-control form-control-color" id="receipt_color" name="receipt_color" value="<?php echo $this->escape($p->get("receipt_color", "#1a1a2e")); ?>"></div></div><div class="mb-3"><label class="form-label fw-semibold" for="receipt_logo">Receipt logo URL</label><input type="url" class="form-control" id="receipt_logo" name="receipt_logo" value="<?php echo $this->escape($p->get("receipt_logo", "")); ?>"></div><div class="mb-3"><label class="form-label fw-semibold" for="receipt_footer">Receipt footer</label><textarea class="form-control" id="receipt_footer" name="receipt_footer" rows="2"><?php echo $this->escape($p->get("receipt_footer", "Thank you for your order.")); ?></textarea></div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-6"><label class="form-label fw-semibold" for="store_email"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_STORE_EMAIL'); ?></label><input type="email" class="form-control" id="store_email" name="store_email" value="<?php echo $this->escape($p->get('store_email', '')); ?>"></div>
@@ -80,6 +79,24 @@ $p = $this->params;
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="pending_order_expiry_minutes"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_PENDING_EXPIRY'); ?></label>
                         <input type="number" class="form-control" id="pending_order_expiry_minutes" name="pending_order_expiry_minutes" value="<?php echo (int) $p->get('pending_order_expiry_minutes', 60); ?>" min="15" max="10080">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+
+    <?php echo HTMLHelper::_('uitab.addTab', 'sanctuaryshop-settings', 'receipts', Text::_('COM_SANCTUARYSHOP_TAB_RECEIPTS')); ?>
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h3 class="card-title mb-0">Receipt appearance</h3></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="receipt_title"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_RECEIPT_TITLE'); ?></label><input type="text" class="form-control" id="receipt_title" name="receipt_title" value="<?php echo $this->escape($p->get('receipt_title', 'Receipt')); ?>"></div>
+                        <div class="col-md-6"><label class="form-label fw-semibold" for="receipt_color"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_RECEIPT_COLOR'); ?></label><input type="color" class="form-control form-control-color" id="receipt_color" name="receipt_color" value="<?php echo $this->escape($p->get('receipt_color', '#1a1a2e')); ?>"></div>
+                        <div class="col-12"><label class="form-label fw-semibold" for="receipt_logo"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_RECEIPT_LOGO'); ?></label><input type="url" class="form-control" id="receipt_logo" name="receipt_logo" value="<?php echo $this->escape($p->get('receipt_logo', '')); ?>"></div>
+                        <div class="col-12"><label class="form-label fw-semibold" for="receipt_footer"><?php echo Text::_('COM_SANCTUARYSHOP_CONFIG_RECEIPT_FOOTER'); ?></label><textarea class="form-control" id="receipt_footer" name="receipt_footer" rows="3"><?php echo $this->escape($p->get('receipt_footer', 'Thank you for your order.')); ?></textarea></div>
                     </div>
                 </div>
             </div>
