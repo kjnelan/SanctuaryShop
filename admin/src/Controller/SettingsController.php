@@ -24,6 +24,11 @@ class SettingsController extends BaseController
         // General
         $params->set('shop_name',         $input->getString('shop_name', ''));
         $params->set('shop_tagline',      $input->getString('shop_tagline', ''));
+        $params->set('receipt_title',    $input->getString('receipt_title', 'Receipt'));
+        $params->set('receipt_footer',   $input->getString('receipt_footer', 'Thank you for your order.'));
+        $params->set('receipt_logo',     $input->getString('receipt_logo', ''));
+        $receiptColor = $input->getString('receipt_color', '#1a1a2e');
+        $params->set('receipt_color',    preg_match('/^#[0-9a-fA-F]{6}$/', $receiptColor) ? $receiptColor : '#1a1a2e');
         $params->set('store_email',       $input->getString('store_email', ''));
         $params->set('store_phone',       $input->getString('store_phone', ''));
         $params->set('store_address',     $input->getString('store_address', ''));

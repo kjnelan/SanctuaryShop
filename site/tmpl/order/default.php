@@ -4,17 +4,23 @@ defined('_JEXEC') or die;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Component\ComponentHelper;
 
 $currencyMap = ['USD'=>'$','EUR'=>'€','GBP'=>'£','CAD'=>'CA$','AUD'=>'A$'];
 $sym         = $currencyMap[$this->order->currency] ?? $this->order->currency . ' ';
 
 $statusMap = ['pending' => 'secondary', 'processing' => 'primary', 'completed' => 'success', 'cancelled' => 'danger', 'refunded' => 'warning'];
 $badge     = $statusMap[$this->order->status] ?? 'secondary';
+$params = ComponentHelper::getParams('com_sanctuaryshop');
+$receiptTitle = (string) $params->get('receipt_title', 'Receipt');
+$receiptFooter = (string) $params->get('receipt_footer', 'Thank you for your order.');
+$receiptLogo = (string) $params->get('receipt_logo', '');
+$receiptColor = preg_match('/^#[0-9a-fA-F]{6}$/', (string) $params->get('receipt_color', '#1a1a2e')) ? (string) $params->get('receipt_color') : '#1a1a2e';
 ?>
 <div class="com-sanctuaryshop-order">
-    <div class="no-print text-end mb-3"><button type="button" class="btn btn-outline-primary" onclick="window.print()">Print receipt</button></div>
+    <div class="no-print text-end mb-3"><?php if ($receiptLogo) : ?><img src="<?php echo $this->escape($receiptLogo); ?>" alt="" style="max-height:64px;max-width:240px" class="me-3"><?php endif; ?><span class="fw-semibold me-3"><?php echo $this->escape($receiptTitle); ?></span><button type="button" class="btn btn-outline-primary" onclick="window.print()">Print receipt</button></div>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
+        <h1 class="h3 mb-0" style="border-top:4px solid <?php echo $this->escape($receiptColor); ?>;padding-top:0.75rem"><?php echo $this->escape($receiptTitle); ?> —
             <?php echo Text::_('COM_SANCTUARYSHOP_ORDER'); ?> #<?php echo str_pad((int) $this->order->id, 5, '0', STR_PAD_LEFT); ?>
         </h1>
         <span class="badge bg-<?php echo $badge; ?> fs-6"><?php echo Text::_('COM_SANCTUARYSHOP_ORDER_STATUS_' . strtoupper($this->order->status)); ?></span>
@@ -147,6 +153,7 @@ $badge     = $statusMap[$this->order->status] ?? 'secondary';
         </div>
     </div>
 
+    <p class="text-muted receipt-footer"><?php echo nl2br($this->escape($receiptFooter)); ?></p>
     <div class="mt-4">
         <a href="<?php echo Route::_('index.php?option=com_sanctuaryshop&view=account'); ?>" class="btn btn-outline-secondary">
             &larr; <?php echo Text::_('COM_SANCTUARYSHOP_BACK_TO_ORDERS'); ?>
